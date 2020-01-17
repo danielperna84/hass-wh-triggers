@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Registration tokens{% endblock %}
+{% block content %}
+{% if current_user.is_authenticated %}
+<h4 class="title is-4">Registration tokens</h4>
+<div class="table__wrapper">
+<table class="table is-bordered">
+    <tbody>
+    {% for token in tokens %}
+        <tr>
+            <td><button class="button" onclick="document.getElementById('url_token').innerHTML = '{{ token.token }}'">{{ token.token }}</button></td>
+            <td><a href="{{ url_for('tokens', del_token=token.id) }}" class="button is-danger">Delete</a></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<hr>
+<p>Register at: <span class="force-select">{{ baseurl }}<span id="url_token"></span></span></p>
+<hr>
+<button type="button" class="button" onclick="add_token()">Add token</button>
+</div>
+<script>
+function add_token() {
+    fetch('tokens/add')
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                console.log("Could not add token");
+                return;
+            }
+            response.json().then(function(data) {
+                window.location.reload();
+            });
+        }
+    )
+    .catch(function(err) {
+        console.log("Fetch Error :-S", err);
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block title %}Triggers{% endblock %}
+{% block content %}
+{% if current_user.is_authenticated %}
+{% for trigger in triggers %}
+<p><button class="button is-outlined is-fullwidth" onclick="fire({{ trigger.id }}, {% if trigger.password | length %}true{% else %}false{% endif %})">{{ trigger.caption }}</button></p><br />
+{% endfor %}
+<script>
+function fire(id, password) {
+    if (password) {
+        var trigger_pw = prompt("Password");
+    }
+    else {
+        var trigger_pw = "";
+    }
+    fetch('triggers/fire/' + id, {
+        method: 'post',
+        headers: {
+            "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"
+        },
+        body: 'password=' + trigger_pw
+    })
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                if (response.status === 401) {
+                    alert("Incorrect password.")
+                }
+                return;
+            }
+            response.json().then(function(data) {
+                if (data.status == "success") {
+                    alert("Success");
+                }
+                else {
+                    alert("Error");
+                }
+            });
+        }
+    )
+    .catch(function(err) {
+        console.log("Fetch Error :-S", err);
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

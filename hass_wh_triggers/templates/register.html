@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<script>
+document.addEventListener("DOMContentLoaded", e => {
+    document.querySelector('#register').addEventListener('click', didClickRegister);
+});
+</script>
+<form id="register-form" name="register" method="get">
+    <input type="text" name="register_username" class="input" placeholder="Username" autofocus required /><br />
+    <input type="password" id="register_password" name="register_password" class="input" placeholder="Password" required onkeyup="check_password()" /><br />
+    <input type="password" id="repeat_password" name="repeat_password" class="input" placeholder="Repeat password" required onkeyup="check_password()" /><br /><br />
+    <input name="register_reg_token" value="{{ reg_token }}" hidden />
+    <button id="register" type="submit" class="button is-outlined is-fullwidth" disabled>Register</button>
+</form>
+<script>
+function check_password() {
+    var p = document.getElementById("register_password").value;
+    var r = document.getElementById("repeat_password").value;
+    if (p == r) {
+        document.getElementById("register").disabled = false;
+    }
+    else {
+        document.getElementById("register").disabled = true;
+    }
+}
+</script>
+{% endblock %}

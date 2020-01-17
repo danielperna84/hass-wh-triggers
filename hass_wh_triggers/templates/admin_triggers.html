@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{% block title %}Triggers{% endblock %}
+{% block content %}
+{% if current_user.is_authenticated and current_user.is_admin %}
+<h4 class="title is-4">Triggers</h4>
+<table class="table">
+        {% for trigger in triggers %}
+        <tr><td>{{ trigger.caption }}&nbsp;</td><td><button class="button is-warning is-small" onclick="load_trigger({{ trigger.id }})">Edit</button></td><td><a class="button is-danger is-small" href="admin_triggers?del_trigger={{ trigger.id }}">Delete</a></td></tr>
+        {% endfor %}
+</table>
+<hr>
+<h4 class="title is-4">Add / modify trigger</h4>
+<form id="add-trigger-form" name="admin_triggers" method="post">
+<label for="caption">Caption: </label><input id="caption" name="caption" type="text" class="input" maxlength="64" autocomplete="off" placeholder="My Automation" required /><br />
+<label for="order">Order: </label><input id="order" name="order" type="number" class="input" value="1" /><br />
+<label for="trigger_json">Trigger data:</label><textarea id="trigger_json" name="trigger_json" class="textarea" maxlength="512" required onkeyup="check_trigger_json(this)" placeholder='{"service":"light.turn_on", "entity_id": "light.kitchen"}'></textarea>
+<label for="webhook_uri">Webhook URI: </label><input id="webhook_uri" name="webhook_uri" type="text" class="input" value="" required placeholder="http://your-home-assistant:8123/api/webhook/some_hook_id" /><br />
+<label for="password">Password (optional): </label><input id="password" name="password" onclick="toggle_password()" type="password" class="input" maxlength="64" autocomplete="off" placeholder="Password" /><br />
+<label for="include_user">Include user: </label><input id="include_user" name="include_user" type="checkbox" checked /><br />
+<input type="hidden" id="id" name="id" value="" />
+<button type="submit" class="button">Save</button><button type="button" class="button" onclick="resetForm()">Reset</button>
+</form>
+<script>
+function resetForm() {
+    document.getElementById('add-trigger-form').reset();
+    document.getElementById('id').value = "";
+}
+
+function check_trigger_json(obj) {
+    try {
+        JSON.parse(obj.value);
+        obj.classList.remove("is-danger");
+    }
+    catch (e) {
+        obj.classList.add("is-danger");
+    }
+}
+
+function toggle_password() {
+    var x = document.getElementById("password");
+    if (x.type === "password") {
+        x.type = "text";
+    } else {
+        x.type = "password";
+    }
+}
+
+function load_trigger(id) {
+    fetch('triggers/' + id)
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                alert("Could not load trigger data");
+                return;
+            }
+            response.json().then(function(data) {
+                document.getElementById("caption").value = data.caption;
+                document.getElementById("order").value = data.order;
+                document.getElementById("trigger_json").value = data.trigger_json;
+                document.getElementById("include_user").checked = data.include_user;
+                document.getElementById("webhook_uri").value = data.webhook_uri;
+                document.getElementById("password").value = data.password;
+                document.getElementById("id").value = data.id;
+            });
+        }
+    )
+    .catch(function(err) {
+        console.log("Fetch Error :-S", err);
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

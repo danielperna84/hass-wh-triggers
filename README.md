@@ -48,3 +48,25 @@ If you add a trigger with the trigger data `{"test": "foo"}` and check the _Incl
 ```
 2020-01-17 22:22:37 WARNING (MainThread) [homeassistant.components.system_log.external] {'test': 'foo', 'user': 'john.doe'}
 ```
+
+## Installation (manual, for testing)
+
+```bash
+git clone https://github.com/danielperna84/hass-wh-triggers.git
+cd hass-wh-triggers
+python3 -m venv venv
+source venv/bin/activate
+cd hass_wh_triggers
+pip install -r requirements
+python create_db.py
+# Locally for testing
+python app.py
+# On a publicly reachable server
+RPID="yourdomain.com" ORIGIN="https://yourdomain.com:8443" flask run --host=0.0.0.0 --port=8443 --cert=/etc/pki/tls/certs/yourcert.pem --key=/etc/pki/tls/private/yourkey.key
+```
+
+This uses the integrated server of Flask to serve the webapp. It should __NOT__ be used for production use. Head over to the [Flask documentation](https://flask.palletsprojects.com/en/1.1.x/deploying/) for more information on how to properly serve Flask apps.
+
+## Disclaimer
+
+This app is in an early stage and should only be used with great caution. I am not responsible for any damage that might result out of using my work. Use at your own risk!

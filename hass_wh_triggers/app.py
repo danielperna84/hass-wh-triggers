@@ -453,13 +453,10 @@ def admin_triggers():
     return render_template('admin_triggers.html', triggers=triggers)
 
 
-### Start python-fido2
 @app.route("/api/register/begin", methods=["POST"])
 @login_required
 def register_begin():
     authenticators = []
-    #for authenticator in Authenticator.query.all():
-    #    authenticators.append(AttestedCredentialData(authenticator.credential))
     registration_data, state = server.register_begin(
         {
             "id": b"%i" % current_user.id,
@@ -506,18 +503,15 @@ def authenticate_begin():
     password = request.form.get('login_password')
 
     if not util.validate_username(username):
-        print("invalid username")
         return make_response(jsonify({'fail': 'Invalid username.'}), 401)
 
     user = User.query.filter_by(username=username).first()
 
     if not user:
-        print("user does not exist")
         return make_response(jsonify({'fail': 'User does not exist.'}), 401)
     if not user.check_password(password):
         user.failed()
         add_to_ban(request.remote_addr)
-        print("wrong password")
         return make_response(jsonify({'fail': 'Wrong password'}), 401)
 
     authenticators = []
@@ -557,8 +551,7 @@ def authenticate_complete():
 
     user = User.query.filter_by(id=int(session["user_id"])).first()
     login_user(user)
-    
-    # Update counter.
+
     user.sign_count = user.sign_count + 1
     user.failed_logins = 0
     user.last_failed = 0
@@ -569,7 +562,6 @@ def authenticate_complete():
     if banned:
         banned.delete()
     return cbor.encode({"status": "OK"})
-### End python-fido2
 
 
 @app.route('/logout')

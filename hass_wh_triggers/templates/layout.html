@@ -39,7 +39,7 @@
                             <a class="navbar-item" href="{{ url_for('settings') }}">Settings</a>
                         </div>
                     </div>
-                    {% else %}
+                    {% elif current_user.is_authenticated %}
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">Settings</a>
                         <div class="navbar-dropdown">

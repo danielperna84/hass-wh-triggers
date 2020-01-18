@@ -9,9 +9,14 @@
     document.querySelector('#loginfido2').addEventListener('click', authenticate);
 });
 
-function authenticate() {
+function authenticate(e) {
+    e.preventDefault();
     // gather the data in the form
     const form = document.querySelector('#login-form');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
     const formData = new FormData(form);
 
     fetch('/api/authenticate/begin', {
@@ -43,11 +48,11 @@ function authenticate() {
     });
 }
 </script>
-<form id="login-form" name="login" method="post" action="{{ url_for('login') }}">
+<form id="login-form" name="login" method="post" action="/login">
     <input type="text" name="login_username" class="input" placeholder="Username" autofocus required /><br />
     <input type="password" name="login_password" class="input" placeholder="Password" required /><br /><br />
-    <button id="login" type="submit" class="button is-outlined is-fullwidth">Login</button>
+    <!--<button id="login" type="submit" class="button is-outlined is-fullwidth">Login</button>-->
+    <button id="loginfido2" type="submit" class="button is-outlined is-fullwidth">Login FIDO2</button>
 </form>
-<button id="loginfido2" type="button" class="button is-outlined is-fullwidth">Login FIDO2</button>
 {% endif %}
 {% endblock %}

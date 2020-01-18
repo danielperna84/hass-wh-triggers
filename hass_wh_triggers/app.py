@@ -131,7 +131,7 @@ def before_request():
 
 @app.context_processor
 def inject_dict_for_all_templates():
-    return dict(app_title=TITLE)
+    return dict(app_title=TITLE, debug=app.debug)
 
 
 @app.route('/index')
@@ -250,8 +250,11 @@ def register():
     return redirect(url_for('zfa'))
 
 
+### This is only accessible when Flasks Debug mode is turned on!
 @app.route('/login', methods=['POST'])
 def login():
+    if not app.config['DEBUG']:
+        abort(401)
     if not checkban(request.remote_addr):
         abort(401)
     username = request.form.get('login_username')

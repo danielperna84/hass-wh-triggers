@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block title %}2-Factor configuration{% endblock %}
+{% block content %}
+<script>
+    document.addEventListener("DOMContentLoaded", e => {
+        document.querySelector('#register_fido2').addEventListener('click', register);
+    });
+    
+    function register(e) {
+        e.preventDefault();
+        const form = document.querySelector('#register-form');
+        const formData = new FormData(form);
+        fetch('/api/register/begin', {
+            method: 'POST',
+            body: formData
+        }).then(function(response) {
+            if(response.ok) return response.arrayBuffer();
+            throw new Error('Error getting registration data!');
+        }).then(CBOR.decode).then(function(options) {
+            return navigator.credentials.create(options);
+        }).then(function(attestation) {
+            return fetch('/api/register/complete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/cbor'},
+                body: CBOR.encode({
+                    "attestationObject": new Uint8Array(attestation.response.attestationObject),
+                    "clientDataJSON": new Uint8Array(attestation.response.clientDataJSON),
+                })
+            });
+        }).then(function(response) {
+            var stat = response.ok ? 'successful' : 'unsuccessful';
+            alert('Registration ' + stat + ' More details in server log...');
+        }, function(reason) {
+            alert(reason);
+        }).then(function() {
+            window.location.reload();
+        });
+    }
+    </script>
+<h4 class="title is-4">2-Factor configuration</h4>
+<h5 class="title is-5">FIDO2 tokens</h5>
+<div class="table__wrapper">
+    <table class="table is-bordered">
+        <thead>
+            <tr>
+                <th>ID</th><th>Name</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for authenticator in authenticators %}
+            <tr>
+                <td>{{ authenticator.id }}</td>
+                <td>{{ authenticator.name }}</td>
+                <td>{% if authenticators|length > 1 %}<a href="{{ url_for('zfa', del_authenticator=authenticator.id) }}" class="button is-danger">Delete</a>{% endif %}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div><br />
+<h6 class="title is-6">Add FIDO2 token</h6>
+<form id="register-form" name="register" method="POST">
+    <input type="text" name="token_name" class="input" placeholder="My Token" required /><br />
+    <button id="register_fido2" type="button" class="button is-outlined is-fullwidth">Add FIDO2 token</button>
+</form>
+{% endblock %}

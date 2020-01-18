@@ -1,3 +1,5 @@
+# pylint: disable=no-member
+
 import os
 import sys
 import ssl
@@ -28,18 +30,27 @@ import util
 
 from db import db
 from context import webauthn
-from models import User, Trigger, Token, Banlist, Setting
+from models import User, Trigger, RegToken, Banlist, Setting, Authenticator
+
+from fido2.webauthn import PublicKeyCredentialRpEntity
+from fido2.client import ClientData
+from fido2.server import Fido2Server
+from fido2.ctap2 import AttestationObject, AuthenticatorData, AttestedCredentialData
+from fido2 import cbor
 
 RP_ID = os.environ.get('RPID') if os.environ.get('RPID') else 'localhost'
 ORIGIN = os.environ.get('ORIGIN') if os.environ.get('ORIGIN') else 'https://localhost:5000'
 
-app = Flask(__name__)
+RP = PublicKeyCredentialRpEntity(RP_ID, "HASS-WH-Triggers")
+server = Fido2Server(RP)
+
+app = Flask(__name__, static_url_path="")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(
     os.path.join(os.path.dirname(os.path.abspath(__name__)), 'webauthn.db'))
 app.config.update(
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
-    SERVER_NAME=ORIGIN.split('/')[-1],
-    SESSION_COOKIE_SECURE=True
+    #SERVER_NAME=ORIGIN.split('/')[-1],
+    #SESSION_COOKIE_SECURE=True
 )
 sk = os.environ.get('FLASK_SECRET_KEY')
 app.secret_key = sk if sk else os.urandom(40)
@@ -55,9 +66,6 @@ SESSION_TIMEOUT = 15
 BANLIMIT = 3
 BANTIME = 60
 IGNORE_SSL = False
-# Trust anchors (trusted attestation roots) should be
-# placed in TRUST_ANCHOR_DIR.
-TRUST_ANCHOR_DIR = 'trusted_attestation_roots'
 SSL_DEFAULT = ssl._create_default_https_context
 SSL_UNVERIFIED = ssl._create_unverified_context
 
@@ -136,8 +144,8 @@ def index():
         return redirect(url_for('triggers'))
     users = User.query.all()
     if not users:
-        return redirect(url_for('register', reg_token="none"))
-    return render_template('index.html', users=users)
+        return redirect(url_for('register_prompt', reg_token="none"))
+    return render_template('index.html')
 
 
 @app.route('/about')
@@ -192,9 +200,9 @@ def banlist():
 
 
 @app.route('/register/<reg_token>')
-def register(reg_token):
+def register_prompt(reg_token):
     if User.query.all():
-        token = Token.query.filter_by(token=reg_token).first()
+        token = RegToken.query.filter_by(token=reg_token).first()
         if not token:
             add_to_ban(request.remote_addr)
     if not checkban(request.remote_addr, increment=False):
@@ -204,6 +212,84 @@ def register(reg_token):
     return render_template('register.html', reg_token=reg_token)
 
 
+@app.route('/register', methods=['POST'])
+def register():
+    if not checkban(request.remote_addr):
+        abort(401)
+    token = None
+    username = request.form.get('register_username')
+    password_hash = generate_password_hash(request.form.get('register_password'))
+    display_name = username
+    reg_token = request.form.get('register_reg_token')
+
+    if User.query.all():
+        token = RegToken.query.filter_by(token=reg_token).first()
+        if not token:
+            return make_response(jsonify({'fail': 'Invalid token.'}), 401)
+    if not util.validate_username(username):
+        return make_response(jsonify({'fail': 'Invalid username.'}), 401)
+    if not util.validate_display_name(display_name):
+        return make_response(jsonify({'fail': 'Invalid display name.'}), 401)
+
+    if User.query.filter_by(username=username).first():
+        return make_response(jsonify({'fail': 'User already exists.'}), 401)
+
+    is_admin = not bool(User.query.all())
+
+    user = User(
+        username=username,
+        display_name=display_name,
+        is_admin=is_admin,
+        password_hash=password_hash,
+        sign_count=0,
+        icon_url=SITE_URL)
+    db.session.add(user)
+    db.session.commit()
+    if token:
+        token.delete()
+    login_user(user)
+    return redirect(url_for('zfa'))
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    if not checkban(request.remote_addr):
+        abort(401)
+    username = request.form.get('login_username')
+    password = request.form.get('login_password')
+
+    if not util.validate_username(username):
+        return make_response(jsonify({'fail': 'Invalid username.'}), 401)
+
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return make_response(jsonify({'fail': 'User does not exist.'}), 401)
+    if not user.check_password(password):
+        user.failed()
+        add_to_ban(request.remote_addr)
+        return make_response(jsonify({'fail': 'Wrong password'}), 401)
+    login_user(user)
+    return redirect(url_for('zfa'))
+
+
+@app.route('/zfa', methods=['GET'])
+@login_required
+def zfa():
+    del_authenticator = request.args.get('del_authenticator')
+    if del_authenticator:
+        if current_user.is_admin:
+            authenticator = Authenticator.query.filter_by(id=del_authenticator).first()
+        else:
+            authenticator = Authenticator.query.filter_by(id=del_authenticator).filter_by(user=current_user.id).first()
+        if authenticator:
+            authenticator.delete()
+        return redirect(url_for('zfa'))
+    authenticators = []
+    for authenticator in Authenticator.query.filter_by(user=current_user.id):
+        authenticators.append({'id': authenticator.id, 'name': authenticator.name, 'user': authenticator.user})
+    return render_template('2fa.html', authenticators=authenticators)
+
 @app.route('/tokens', methods=['GET'])
 @login_required
 def tokens():
@@ -211,11 +297,11 @@ def tokens():
         return redirect(url_for('triggers'))
     del_token = request.args.get('del_token')
     if del_token:
-        token = Token.query.filter_by(id=del_token).first()
+        token = RegToken.query.filter_by(id=del_token).first()
         if token:
             token.delete()
         return redirect(url_for('tokens'))
-    tokens = Token.query.all()
+    tokens = RegToken.query.all()
     return render_template('tokens.html', tokens=tokens, baseurl=request.url_root + 'register/')
 
 
@@ -224,7 +310,7 @@ def tokens():
 def tokens_add():
     if not current_user.is_admin:
         return redirect(url_for('triggers'))
-    token = Token(token="%064x" % random.getrandbits(256))
+    token = RegToken(token="%064x" % random.getrandbits(256))
     db.session.add(token)
     db.session.commit()
     return make_response(jsonify({'success': token.id}), 200)
@@ -239,10 +325,15 @@ def users():
     if del_user:
         user = User.query.filter_by(id=del_user).first()
         if user:
+            for authenticator in Authenticator.query.filter_by(user=user.id):
+                authenticator.delete()
             user.delete()
         return redirect(url_for('users'))
     users = User.query.all()
-    return render_template('users.html', users=users)
+    authenticators = []
+    for authenticator in Authenticator.query.all():
+        authenticators.append({'id': authenticator.id, 'name': authenticator.name, 'user': authenticator.user})
+    return render_template('users.html', users=users, authenticators=authenticators)
 
 
 @app.route('/users/toggle_admin/<int:userid>')
@@ -363,215 +454,113 @@ def admin_triggers():
     return render_template('admin_triggers.html', triggers=triggers)
 
 
-@app.route('/webauthn_begin_activate', methods=['POST'])
-def webauthn_begin_activate():
-    # MakeCredentialOptions
-    if not checkban(request.remote_addr):
-        abort(401)
-    username = request.form.get('register_username')
-    password = request.form.get('register_password')
-    password_hash = generate_password_hash(password)
-    display_name = username
-    reg_token = request.form.get('register_reg_token')
+### Start python-fido2
+@app.route("/api/register/begin", methods=["POST"])
+@login_required
+def register_begin():
+    authenticators = []
+    #for authenticator in Authenticator.query.all():
+    #    authenticators.append(AttestedCredentialData(authenticator.credential))
+    registration_data, state = server.register_begin(
+        {
+            "id": b"%i" % current_user.id,
+            "name": current_user.username,
+            "displayName": current_user.display_name,
+            "icon": "https://example.com/image.png",
+        },
+        authenticators,
+        user_verification="discouraged", # "required", "preferred", "discouraged"
+        # https://w3c.github.io/webauthn/#enum-userVerificationRequirement
+        # https://w3c.github.io/webauthn/#user-verification
+        authenticator_attachment=None, # "platform", "cross-platform", None for both
+        # https://w3c.github.io/webauthn/#enum-attachment
+        # https://w3c.github.io/webauthn/#platform-attachment
+    )
 
-    if User.query.all():
-        token = Token.query.filter_by(token=reg_token).first()
-        if not token:
-            return make_response(jsonify({'fail': 'Invalid token.'}), 401)
-    if not util.validate_username(username):
-        return make_response(jsonify({'fail': 'Invalid username.'}), 401)
-    if not util.validate_display_name(display_name):
-        return make_response(jsonify({'fail': 'Invalid display name.'}), 401)
-
-    if User.query.filter_by(username=username).first():
-        return make_response(jsonify({'fail': 'User already exists.'}), 401)
-
-    if 'register_ukey' in session:
-        del session['register_ukey']
-    if 'register_username' in session:
-        del session['register_username']
-    if 'register_display_name' in session:
-        del session['register_display_name']
-    if 'register_password_hash' in session:
-        del session['register_password_hash']
-    if 'register_reg_token' in session:
-        del session['register_reg_token']
-    if 'challenge' in session:
-        del session['challenge']
-
-    session['register_username'] = username
-    session['register_display_name'] = display_name
-    session['register_password_hash'] = password_hash
-    session['register_reg_token'] = reg_token
-
-    rp_name = 'localhost'
-    challenge = util.generate_challenge(32)
-    ukey = util.generate_ukey()
-
-    session['challenge'] = challenge
-    session['register_ukey'] = ukey
-
-    make_credential_options = webauthn.WebAuthnMakeCredentialOptions(
-        challenge, rp_name, RP_ID, ukey, username, display_name,
-        SITE_URL)
-
-    return jsonify(make_credential_options.registration_dict)
+    session['token_name'] = request.form.get('token_name')
+    session['user_id'] = current_user.id
+    session["state"] = state
+    return cbor.encode(registration_data)
 
 
-@app.route('/webauthn_begin_assertion', methods=['POST'])
-def webauthn_begin_assertion():
-    if not checkban(request.remote_addr):
-        abort(401)
+@app.route("/api/register/complete", methods=["POST"])
+def register_complete():
+    data = cbor.decode(request.get_data())
+    client_data = ClientData(data["clientDataJSON"])
+    att_obj = AttestationObject(data["attestationObject"])
+    auth_data = server.register_complete(session["state"], client_data, att_obj)
+    authenticator = Authenticator(
+        credential=auth_data.credential_data,
+        user=int(session['user_id']),
+        name=session['token_name'])
+    db.session.add(authenticator)
+    db.session.commit()
+    return cbor.encode({"status": "OK"})
+
+
+@app.route("/api/authenticate/begin", methods=["POST"])
+def authenticate_begin():
+    if not Authenticator.query.all():
+        abort(404)
+
     username = request.form.get('login_username')
     password = request.form.get('login_password')
 
     if not util.validate_username(username):
+        print("invalid username")
         return make_response(jsonify({'fail': 'Invalid username.'}), 401)
 
     user = User.query.filter_by(username=username).first()
 
     if not user:
+        print("user does not exist")
         return make_response(jsonify({'fail': 'User does not exist.'}), 401)
-    if not user.credential_id:
-        user.failed()
-        add_to_ban(request.remote_addr)
-        return make_response(jsonify({'fail': 'Unknown credential ID.'}), 401)
     if not user.check_password(password):
         user.failed()
         add_to_ban(request.remote_addr)
+        print("wrong password")
         return make_response(jsonify({'fail': 'Wrong password'}), 401)
 
-    if 'challenge' in session:
-        del session['challenge']
-
-    challenge = util.generate_challenge(32)
-
-    session['challenge'] = challenge
-
-    webauthn_user = webauthn.WebAuthnUser(
-        user.ukey, user.username, user.display_name, user.icon_url,
-        user.credential_id, user.pub_key, user.sign_count, user.rp_id)
-
-    webauthn_assertion_options = webauthn.WebAuthnAssertionOptions(
-        webauthn_user, challenge)
-
-    return jsonify(webauthn_assertion_options.assertion_dict)
+    authenticators = []
+    for authenticator in Authenticator.query.filter_by(user=user.id):
+        authenticators.append(AttestedCredentialData(authenticator.credential))
+    if not authenticators:
+        return make_response(jsonify({'fail': 'No authenticator enrolled'}), 401)
+    auth_data, state = server.authenticate_begin(authenticators)
+    session["state"] = state
+    session["user_id"] = user.id
+    
+    return cbor.encode(auth_data)
 
 
-@app.route('/verify_credential_info', methods=['POST'])
-def verify_credential_info():
-    if not checkban(request.remote_addr):
-        abort(401)
-    challenge = session['challenge']
-    username = session['register_username']
-    display_name = session['register_display_name']
-    password_hash = session['register_password_hash']
-    reg_token = session['register_reg_token']
-    ukey = session['register_ukey']
+@app.route("/api/authenticate/complete", methods=["POST"])
+def authenticate_complete():
+    if not Authenticator.query.all():
+        abort(404)
 
-    del session['register_password_hash']
-    if 'register_reg_token' in session:
-        del session['register_reg_token']
+    authenticators = []
+    for authenticator in Authenticator.query.all():
+        authenticators.append(AttestedCredentialData(authenticator.credential))
+    data = cbor.decode(request.get_data())
+    credential_id = data["credentialId"]
+    client_data = ClientData(data["clientDataJSON"])
+    auth_data = AuthenticatorData(data["authenticatorData"])
+    signature = data["signature"]
 
-    registration_response = request.form
-    trust_anchor_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), TRUST_ANCHOR_DIR)
-    trusted_attestation_cert_required = True
-    self_attestation_permitted = True
-    none_attestation_permitted = True
+    server.authenticate_complete(
+        session.pop("state"),
+        authenticators,
+        credential_id,
+        client_data,
+        auth_data,
+        signature,
+    )
 
-    webauthn_registration_response = webauthn.WebAuthnRegistrationResponse(
-        RP_ID,
-        ORIGIN,
-        registration_response,
-        challenge,
-        trust_anchor_dir,
-        trusted_attestation_cert_required,
-        self_attestation_permitted,
-        none_attestation_permitted,
-        uv_required=False)  # User Verification
-
-    try:
-        webauthn_credential = webauthn_registration_response.verify()
-    except Exception as e:
-        return jsonify({'fail': 'Registration failed. Error: {}'.format(e)})
-
-    # Step 17.
-    #
-    # Check that the credentialId is not yet registered to any other user.
-    # If registration is requested for a credential that is already registered
-    # to a different user, the Relying Party SHOULD fail this registration
-    # ceremony, or it MAY decide to accept the registration, e.g. while deleting
-    # the older registration.
-    credential_id_exists = User.query.filter_by(
-        credential_id=webauthn_credential.credential_id).first()
-    if credential_id_exists:
-        return make_response(
-            jsonify({
-                'fail': 'Credential ID already exists.'
-            }), 401)
-
-    is_admin = not bool(User.query.all())
-    existing_user = User.query.filter_by(username=username).first()
-    if not existing_user:
-        if sys.version_info >= (3, 0):
-            webauthn_credential.credential_id = str(
-                webauthn_credential.credential_id, "utf-8")
-            webauthn_credential.public_key = str(
-                webauthn_credential.public_key, "utf-8")
-        user = User(
-            ukey=ukey,
-            username=username,
-            display_name=display_name,
-            is_admin=is_admin,
-            password_hash=password_hash,
-            pub_key=webauthn_credential.public_key,
-            credential_id=webauthn_credential.credential_id,
-            sign_count=webauthn_credential.sign_count,
-            rp_id=RP_ID,
-            icon_url=SITE_URL)
-        db.session.add(user)
-        db.session.commit()
-        token = Token.query.filter_by(token=reg_token).first()
-        if token:
-            token.delete()
-    else:
-        return make_response(jsonify({'fail': 'User already exists.'}), 401)
-
-    flash('Successfully registered as {}.'.format(username))
-    return jsonify({'success': 'User successfully registered.'})
-
-
-@app.route('/verify_assertion', methods=['POST'])
-def verify_assertion():
-    if not checkban(request.remote_addr):
-        abort(401)
-    challenge = session.get('challenge')
-    assertion_response = request.form
-    credential_id = assertion_response.get('id')
-
-    user = User.query.filter_by(credential_id=credential_id).first()
-    if not user:
-        return make_response(jsonify({'fail': 'User does not exist.'}), 401)
-
-    webauthn_user = webauthn.WebAuthnUser(
-        user.ukey, user.username, user.display_name, user.icon_url,
-        user.credential_id, user.pub_key, user.sign_count, user.rp_id)
-
-    webauthn_assertion_response = webauthn.WebAuthnAssertionResponse(
-        webauthn_user,
-        assertion_response,
-        challenge,
-        ORIGIN,
-        uv_required=False)  # User Verification
-
-    try:
-        sign_count = webauthn_assertion_response.verify()
-    except Exception as e:
-        return jsonify({'fail': 'Assertion failed. Error: {}'.format(e)})
-
+    user = User.query.filter_by(id=int(session["user_id"])).first()
+    login_user(user)
+    
     # Update counter.
-    user.sign_count = sign_count
+    user.sign_count = user.sign_count + 1
     user.failed_logins = 0
     user.last_failed = 0
     user.last_login = int(time.time())
@@ -580,13 +569,8 @@ def verify_assertion():
     banned = Banlist.query.filter_by(ip=request.remote_addr).first()
     if banned:
         banned.delete()
-
-    login_user(user)
-
-    return jsonify({
-        'success':
-        'Successfully authenticated as {}'.format(user.username)
-    })
+    return cbor.encode({"status": "OK"})
+### End python-fido2
 
 
 @app.route('/logout')

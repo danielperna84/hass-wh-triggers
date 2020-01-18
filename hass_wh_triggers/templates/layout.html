@@ -5,7 +5,7 @@
         <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
         <meta name="viewport" content="width=device-width, maximum-scale=1.0" />
         <script src="{{ url_for('static', filename='js/lib/base64.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/webauthn.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/cbor.js') }}"></script>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/bulma.min.css') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
         <title>{% block title %}{% endblock %} - {{ app_title }}</title>
@@ -14,7 +14,7 @@
     <body>
         <nav class="navbar" role="navigation" aria-label="main navigation">
             <div class="navbar-brand">
-                <a class="navbar-item" href="{{ url_for('index') }}">{{ app_title }}{% if current_user.is_authenticated %} | {{ current_user.username }}{% endif %}</a>
+                <a class="navbar-item" href="{{ url_for('index') }}">{{ app_title }}{% if current_user.is_authenticated %}{% endif %}</a>
                 <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
@@ -23,7 +23,7 @@
             </div>
             <div class="navbar-menu" id="navMenu">
                 <div class="navbar-start">
-                    {% if current_user.is_authenticated %}<a class="navbar-item" href="{{ url_for('triggers') }}">Triggers</a>{% endif %}
+                    {% if current_user.is_authenticated and current_user.sign_count > 0 %}<a class="navbar-item" href="{{ url_for('triggers') }}">Triggers</a>{% endif %}
                 </div>
               
                 <div class="navbar-end">
@@ -32,10 +32,18 @@
                         <a class="navbar-link">Admin</a>
                         <div class="navbar-dropdown">
                             <a class="navbar-item" href="{{ url_for('admin_triggers') }}">Triggers</a>
+                            <a class="navbar-item" href="{{ url_for('zfa') }}">2FA-Tokens</a>
                             <a class="navbar-item" href="{{ url_for('users') }}">Users</a>
                             <a class="navbar-item" href="{{ url_for('tokens') }}">Registration tokens</a>
                             <a class="navbar-item" href="{{ url_for('banlist') }}">Banlist</a>
                             <a class="navbar-item" href="{{ url_for('settings') }}">Settings</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">Settings</a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="{{ url_for('zfa') }}">2FA-Tokens</a>
                         </div>
                     </div>
                     {% endif %}

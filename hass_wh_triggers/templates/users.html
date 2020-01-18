@@ -2,7 +2,7 @@
 {% block title %}Users{% endblock %}
 {% block content %}
 {% if current_user.is_authenticated %}
-<h2>Users</h2>
+<h5 class="title is-5">Users</h5>
 <div class="table__wrapper">
 <table class="table is-bordered">
     <thead>
@@ -25,6 +25,27 @@
     {% endfor %}
     </tbody>
 </table>
+</div>
+<hr>
+<h5 class="title is-5">FIDO2 tokens</h5>
+<div class="table__wrapper">
+    <table class="table is-bordered">
+        <thead>
+            <tr>
+                <th>ID</th><th>Name</th><th>User ID</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for authenticator in authenticators %}
+            <tr>
+                <td>{{ authenticator.id }}</td>
+                <td>{{ authenticator.name }}</td>
+                <td>{{ authenticator.user }}</td>
+                <td><a href="{{ url_for('zfa', del_authenticator=authenticator.id) }}" class="button is-danger">Delete</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 </div>
 <script>
 function toggle_admin(obj) {

@@ -3,10 +3,11 @@
 {% block content %}
 <script>
 document.addEventListener("DOMContentLoaded", e => {
-    document.querySelector('#register').addEventListener('click', didClickRegister);
+    document.querySelector('#register_fido2').addEventListener('click', register);
 });
+
 </script>
-<form id="register-form" name="register" method="get">
+<form id="register-form" name="register" method="POST" action="{{ url_for('register') }}">
     <input type="text" name="register_username" class="input" placeholder="Username" autofocus required /><br />
     <input type="password" id="register_password" name="register_password" class="input" placeholder="Password" required onkeyup="check_password()" /><br />
     <input type="password" id="repeat_password" name="repeat_password" class="input" placeholder="Repeat password" required onkeyup="check_password()" /><br /><br />
@@ -17,7 +18,7 @@ document.addEventListener("DOMContentLoaded", e => {
 function check_password() {
     var p = document.getElementById("register_password").value;
     var r = document.getElementById("repeat_password").value;
-    if (p == r) {
+    if (p == r && p.length > 0) {
         document.getElementById("register").disabled = false;
     }
     else {

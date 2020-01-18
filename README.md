@@ -69,4 +69,4 @@ This uses the integrated server of Flask to serve the webapp. It should __NOT__ 
 
 ## Disclaimer
 
-This app is in an early stage and should only be used with great caution. I am not responsible for any damage that might result out of using my work. Use at your own risk!
+This app is in an early stage and should only be used with great caution. I am not responsible for any damage that might result out of using my work. Use at your own risk! I also have to mention, that this is my first Flask app. So I might be doing some pretty stupid stuff. Feel free to review my code and suggest improvements.

@@ -29,7 +29,6 @@ from werkzeug.security import generate_password_hash
 import util
 
 from db import db
-from context import webauthn
 from models import User, Trigger, RegToken, Banlist, Setting, Authenticator
 
 from fido2.webauthn import PublicKeyCredentialRpEntity

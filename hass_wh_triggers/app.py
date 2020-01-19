@@ -43,7 +43,7 @@ ORIGIN = os.environ.get('ORIGIN') if os.environ.get('ORIGIN') else 'https://loca
 RP = PublicKeyCredentialRpEntity(RP_ID, "HASS-WH-Triggers")
 server = Fido2Server(RP)
 
-app = Flask(__name__, static_url_path="")
+app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(
     os.path.join(os.path.dirname(os.path.abspath(__name__)), 'webauthn.db'))
 app.config.update(
@@ -524,8 +524,8 @@ def authenticate_begin():
         return make_response(jsonify({'fail': 'No authenticator enrolled'}), 401)
     auth_data, state = server.authenticate_begin(authenticators)
     session["state"] = state
-    session["user_id"] = user.id
-    
+    session["lid"] = user.id
+
     return cbor.encode(auth_data)
 
 
@@ -535,7 +535,7 @@ def authenticate_complete():
         abort(404)
 
     authenticators = []
-    user = User.query.filter_by(id=int(session["user_id"])).first()
+    user = User.query.filter_by(id=int(session.pop("lid"))).first()
     for authenticator in Authenticator.query.filter_by(user=user.id):
         authenticators.append(AttestedCredentialData(authenticator.credential))
     data = cbor.decode(request.get_data())

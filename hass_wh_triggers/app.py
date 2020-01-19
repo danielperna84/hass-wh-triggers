@@ -390,6 +390,10 @@ def otp():
         if token:
             token.delete()
         return redirect(url_for('tokens'))
+    now = time.time()
+    for token in OTPToken.query.all():
+        if now - token.created > token.max_age:
+            token.delete()
     tokens = OTPToken.query.all()
     users = []
     for user in User.query.all():

@@ -270,8 +270,6 @@ def login_debug():
     if not user:
         return make_response(jsonify({'fail': 'User does not exist.'}), 401)
     if not user.check_password(password):
-        user.failed()
-        add_to_ban(request.remote_addr)
         return make_response(jsonify({'fail': 'Wrong password'}), 401)
     login_user(user)
     return redirect(url_for('zfa'))
@@ -284,26 +282,36 @@ def login_totp():
     totp = request.form.get('login_totp')
 
     if not util.validate_username(username):
-        return make_response(jsonify({'fail': 'Invalid username.'}), 401)
+        print("Invalid username")
+        return make_response(jsonify({'status': 'error'}), 401)
 
     user = User.query.filter_by(username=username).first()
 
     if not user:
-        return make_response(jsonify({'fail': 'User does not exist.'}), 401)
+        add_to_ban(request.remote_addr)
+        print("User does not exist")
+        return make_response(jsonify({'status': 'error'}), 401)
     if not user.check_password(password):
         user.failed()
         add_to_ban(request.remote_addr)
-        return make_response(jsonify({'fail': 'Wrong password'}), 401)
+        print("Wrong password")
+        return make_response(jsonify({'status': 'error'}), 401)
 
     if not user.totp_secret:
-        return make_response(jsonify({'fail': 'No TOTP available'}), 401)
+        user.failed()
+        add_to_ban(request.remote_addr)
+        print("No TOTP available")
+        return make_response(jsonify({'status': 'error'}), 401)
 
     if not pyotp.totp.TOTP(user.totp_secret).verify(totp):
-        return make_response(jsonify({'fail': 'Incorrect TOTP'}), 401)
+        user.failed()
+        add_to_ban(request.remote_addr)
+        print("Incorrect TOTP")
+        return make_response(jsonify({'status': 'error'}), 401)
 
     login_user(user)
 
-    return redirect(url_for('triggers'))
+    return make_response(jsonify({'status': 'success'}), 200)
 
 
 @app.route('/zfa', methods=['GET'])

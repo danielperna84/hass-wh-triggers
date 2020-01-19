@@ -253,8 +253,8 @@ def register():
 
 
 ### This is only accessible when Flasks Debug mode is turned on!
-@app.route('/login', methods=['POST'])
-def login():
+@app.route('/login/debug', methods=['POST'])
+def login_debug():
     if not app.config['DEBUG']:
         abort(401)
     if not checkban(request.remote_addr):
@@ -275,6 +275,35 @@ def login():
         return make_response(jsonify({'fail': 'Wrong password'}), 401)
     login_user(user)
     return redirect(url_for('zfa'))
+
+
+@app.route("/login/totp", methods=["POST"])
+def login_totp():
+    username = request.form.get('login_username')
+    password = request.form.get('login_password')
+    totp = request.form.get('login_totp')
+
+    if not util.validate_username(username):
+        return make_response(jsonify({'fail': 'Invalid username.'}), 401)
+
+    user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return make_response(jsonify({'fail': 'User does not exist.'}), 401)
+    if not user.check_password(password):
+        user.failed()
+        add_to_ban(request.remote_addr)
+        return make_response(jsonify({'fail': 'Wrong password'}), 401)
+
+    if not user.totp_secret:
+        return make_response(jsonify({'fail': 'No TOTP available'}), 401)
+
+    if not pyotp.totp.TOTP(user.totp_secret).verify(totp):
+        return make_response(jsonify({'fail': 'Incorrect TOTP'}), 401)
+
+    login_user(user)
+
+    return redirect(url_for('triggers'))
 
 
 @app.route('/zfa', methods=['GET'])

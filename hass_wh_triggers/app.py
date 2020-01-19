@@ -161,8 +161,6 @@ def about():
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
-    if not checkban(request.remote_addr):
-        abort(401)
     title = Setting.query.filter_by(parameter='title').first()
     session_timeout = Setting.query.filter_by(parameter='session_timeout').first()
     ban_limit = Setting.query.filter_by(parameter='ban_limit').first()
@@ -279,12 +277,15 @@ def login_debug():
 
 @app.route("/login/otp", methods=["POST"])
 def login_otp():
+    if not checkban(request.remote_addr):
+        abort(401)
     username = request.form.get('login_username')
     password = request.form.get('login_password')
     totp = request.form.get('login_totp')
     otp = request.form.get('login_otp')
 
     if not util.validate_username(username):
+        add_to_ban(request.remote_addr)
         print("Invalid username")
         return make_response(jsonify({'status': 'error'}), 401)
 
@@ -594,6 +595,7 @@ def register_begin():
 
 
 @app.route("/api/register/complete", methods=["POST"])
+@login_required
 def register_complete():
     data = cbor.decode(request.get_data())
     client_data = ClientData(data["clientDataJSON"])
@@ -610,6 +612,8 @@ def register_complete():
 
 @app.route("/api/authenticate/begin", methods=["POST"])
 def authenticate_begin():
+    if not checkban(request.remote_addr):
+        abort(401)
     if not Authenticator.query.all():
         abort(404)
 
@@ -642,6 +646,8 @@ def authenticate_begin():
 
 @app.route("/api/authenticate/complete", methods=["POST"])
 def authenticate_complete():
+    if not checkban(request.remote_addr):
+        abort(401)
     if not Authenticator.query.all():
         abort(404)
 

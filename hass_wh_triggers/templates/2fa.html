@@ -4,6 +4,8 @@
 <script>
     document.addEventListener("DOMContentLoaded", e => {
         document.querySelector('#register_fido2').addEventListener('click', register);
+        document.querySelector('#gen_totp').addEventListener('click', gen_totp);
+        new QRCode(document.getElementById("qrcode"), "{{ totp_uri }}");
     });
     
     function register(e) {
@@ -36,6 +38,32 @@
             window.location.reload();
         });
     }
+
+    function gen_totp(e) {
+        if (!confirm("Warning. This will replace an existing TOTP token!")) {
+            return;
+        }
+        fetch('/totp/generate', {})
+        .then(
+            function(response) {
+                if (response.status !== 200) {
+                    alert("Could not generate TOTP.");
+                    return;
+                }
+                response.json().then(function(data) {
+                    if (data.status == "success") {
+                        window.location.reload();
+                    }
+                    else {
+                        alert("Error while generating TOTP.");
+                    }
+                });
+            }
+        )
+        .catch(function(err) {
+            console.log("Fetch Error :-S", err);
+        });
+    }
     </script>
 <h4 class="title is-4">2-Factor configuration</h4>
 <h5 class="title is-5">FIDO2 tokens</h5>
@@ -62,4 +90,11 @@
     <input type="text" name="token_name" class="input" placeholder="My Token" required /><br />
     <button id="register_fido2" type="button" class="button is-outlined is-fullwidth">Add FIDO2 token</button>
 </form>
+<hr>
+<h5 class="title is-5">TOTP token</h5>
+<button id="gen_totp" type="button" class="button is-outlined is-fullwidth">Generate TOTP token</button><br />
+<label for="totp_secret" class="label">Base32 secret:</label><input id="totp_secret" type="text" class="input" value="{{ totp_secret }}" disabled />
+<label for="totp_uri" class="label">Provisioning URI:</label><input id="totp_uri" type="text" class="input" value="{{ totp_uri }}" disabled /><br /><br />
+<a style="display: flex; justify-content: center; text-align: center;" href="{{ totp_uri }}"><div id="qrcode"></div></a>
+<br />
 {% endblock %}

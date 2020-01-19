@@ -5,6 +5,7 @@ Flask-Login==0.4.1
 Flask-SQLAlchemy==2.4.1
 Flask-WTF==0.14.2
 future==0.18.2
+pyotp==2.3.0
 pyOpenSSL==19.1.0
 setuptools==45.1.0
 setuptools-scm==3.4.2

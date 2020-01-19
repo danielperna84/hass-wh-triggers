@@ -37,6 +37,8 @@ from fido2.server import Fido2Server
 from fido2.ctap2 import AttestationObject, AuthenticatorData, AttestedCredentialData
 from fido2 import cbor
 
+import pyotp
+
 RP_ID = os.environ.get('RPID') if os.environ.get('RPID') else 'localhost'
 ORIGIN = os.environ.get('ORIGIN') if os.environ.get('ORIGIN') else 'https://localhost:5000'
 
@@ -290,7 +292,14 @@ def zfa():
     authenticators = []
     for authenticator in Authenticator.query.filter_by(user=current_user.id):
         authenticators.append({'id': authenticator.id, 'name': authenticator.name, 'user': authenticator.user})
-    return render_template('2fa.html', authenticators=authenticators)
+    user = User.query.filter_by(username=current_user.username).first()
+    totp_secret = user.totp_secret
+    totp_uri = ""
+    if totp_secret:
+         totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
+             name=current_user.username, issuer_name=TITLE)
+    return render_template('2fa.html', authenticators=authenticators,
+                           totp_secret=totp_secret, totp_uri=totp_uri)
 
 @app.route('/tokens', methods=['GET'])
 @login_required
@@ -316,6 +325,16 @@ def tokens_add():
     db.session.add(token)
     db.session.commit()
     return make_response(jsonify({'success': token.id}), 200)
+
+
+@app.route('/totp/generate')
+@login_required
+def totp_generate():
+    user = User.query.filter_by(username=current_user.username).first()
+    user.totp_secret = pyotp.random_base32()
+    db.session.add(user)
+    db.session.commit()
+    return make_response(jsonify({"status": "success"}), 200)
 
 
 @app.route('/users', methods=['GET'])

@@ -535,7 +535,8 @@ def authenticate_complete():
         abort(404)
 
     authenticators = []
-    for authenticator in Authenticator.query.all():
+    user = User.query.filter_by(id=int(session["user_id"])).first()
+    for authenticator in Authenticator.query.filter_by(user=user.id):
         authenticators.append(AttestedCredentialData(authenticator.credential))
     data = cbor.decode(request.get_data())
     credential_id = data["credentialId"]
@@ -552,7 +553,6 @@ def authenticate_complete():
         signature,
     )
 
-    user = User.query.filter_by(id=int(session["user_id"])).first()
     login_user(user)
 
     user.sign_count = user.sign_count + 1

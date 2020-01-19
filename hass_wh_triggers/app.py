@@ -49,7 +49,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(
     os.path.join(os.path.dirname(os.path.abspath(__name__)), 'webauthn.db'))
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-if ORIGIN != 'localhost':
+if RP_ID != 'localhost':
     app.config.update(
         SERVER_NAME=ORIGIN.split('/')[-1],
         SESSION_COOKIE_SECURE=True

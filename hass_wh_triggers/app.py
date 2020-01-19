@@ -29,7 +29,7 @@ from werkzeug.security import generate_password_hash
 import util
 
 from db import db
-from models import User, Trigger, RegToken, Banlist, Setting, Authenticator
+from models import User, Trigger, RegToken, Banlist, Setting, Authenticator, OTPToken
 
 from fido2.webauthn import PublicKeyCredentialRpEntity
 from fido2.client import ClientData
@@ -146,7 +146,8 @@ def index():
     users = User.query.all()
     if not users:
         return redirect(url_for('register_prompt', reg_token="none"))
-    return render_template('index.html')
+    otp = request.args.get('otp')
+    return render_template('index.html', otp=otp)
 
 
 @app.route('/about')
@@ -275,11 +276,12 @@ def login_debug():
     return redirect(url_for('zfa'))
 
 
-@app.route("/login/totp", methods=["POST"])
-def login_totp():
+@app.route("/login/otp", methods=["POST"])
+def login_otp():
     username = request.form.get('login_username')
     password = request.form.get('login_password')
     totp = request.form.get('login_totp')
+    otp = request.form.get('login_otp')
 
     if not util.validate_username(username):
         print("Invalid username")
@@ -297,21 +299,34 @@ def login_totp():
         print("Wrong password")
         return make_response(jsonify({'status': 'error'}), 401)
 
-    if not user.totp_secret:
+    otps = []
+    for otp in OTPToken.query.filter_by(user=user.id):
+        otps.append(otp)
+
+    if not user.totp_secret and not otps:
         user.failed()
         add_to_ban(request.remote_addr)
-        print("No TOTP available")
+        print("No (T)OTP available")
         return make_response(jsonify({'status': 'error'}), 401)
 
-    if not pyotp.totp.TOTP(user.totp_secret).verify(totp):
-        user.failed()
-        add_to_ban(request.remote_addr)
+    if totp and user.totp_secret:
+        if pyotp.totp.TOTP(user.totp_secret).verify(totp):
+            login_user(user)
+            return make_response(jsonify({'status': 'success'}), 200)
         print("Incorrect TOTP")
-        return make_response(jsonify({'status': 'error'}), 401)
 
-    login_user(user)
+    if otp and otps:
+        now = int(time.time())
+        for otp_token in otps:
+            if now - otp_token.created < otp_token.max_age:
+                otp_token.delete()
+                login_user(user)
+                return make_response(jsonify({'status': 'success'}), 200)
+        print("Invalid OTP")
 
-    return make_response(jsonify({'status': 'success'}), 200)
+    user.failed()
+    add_to_ban(request.remote_addr)
+    return make_response(jsonify({'status': 'error'}), 401)
 
 
 @app.route('/zfa', methods=['GET'])
@@ -359,6 +374,41 @@ def tokens_add():
     if not current_user.is_admin:
         return redirect(url_for('triggers'))
     token = RegToken(token="%064x" % random.getrandbits(256))
+    db.session.add(token)
+    db.session.commit()
+    return make_response(jsonify({'success': token.id}), 200)
+
+
+@app.route('/otp', methods=['GET'])
+@login_required
+def otp():
+    if not current_user.is_admin:
+        return redirect(url_for('triggers'))
+    del_token = request.args.get('del_token')
+    if del_token:
+        token = OTPToken.query.filter_by(id=del_token).first()
+        if token:
+            token.delete()
+        return redirect(url_for('tokens'))
+    tokens = OTPToken.query.all()
+    users = []
+    for user in User.query.all():
+        users.append({"id": user.id, "username": user.username})
+    return render_template('otp.html', tokens=tokens, users=users, baseurl=request.url_root + 'index?otp=')
+
+
+@app.route('/otp/add', methods=['POST'])
+@login_required
+def otp_add():
+    if not current_user.is_admin:
+        return redirect(url_for('triggers'))
+    user = request.values.get('user')
+    max_age = request.values.get('max_age')
+    token = OTPToken(
+        token="%064x" % random.getrandbits(256),
+        max_age=int(max_age),
+        user=int(user)
+        )
     db.session.add(token)
     db.session.commit()
     return make_response(jsonify({'success': token.id}), 200)

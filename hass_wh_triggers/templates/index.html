@@ -6,7 +6,7 @@
 {% else %}
 <script>
     document.addEventListener("DOMContentLoaded", e => {
-    document.querySelector('#loginfido2').addEventListener('click', authenticate);
+    document.querySelector('#login').addEventListener('click', authenticate);
 });
 
 function authenticate(e) {
@@ -20,8 +20,9 @@ function authenticate(e) {
     const formData = new FormData(form);
 
     const totp = document.getElementById('login_totp').value;
-    if (totp) {
-        fetch('/login/totp', {
+    const otp = document.getElementById('login_otp').value;
+    if (totp || otp) {
+        fetch('/login/otp', {
             method: 'POST',
             body: formData
         }).then(function(response) {
@@ -69,8 +70,9 @@ function authenticate(e) {
     <input type="text" name="login_username" class="input" placeholder="Username" autofocus required /><br />
     <input type="password" name="login_password" class="input" placeholder="Password" required /><br />
     <input type="number" id="login_totp" name="login_totp" class="input" max="999999" placeholder="TOTP (e.g. 123456, if available)" /><br /><br />
-    <button id="loginfido2" type="submit" class="button is-outlined is-fullwidth">Login</button>
-    {% if debug %}<button id="login" type="submit" class="button is-outlined is-fullwidth">DebugLogin</button>{% endif %}
+    <input type="hidden" name="login_otp" id="login_otp" value="{{ otp if otp }}" />
+    <button id="login" type="submit" class="button is-outlined is-fullwidth">Login</button>
+    {% if debug %}<button id="logindebug" type="submit" class="button is-outlined is-fullwidth">DebugLogin</button>{% endif %}
 </form>
 {% endif %}
 {% endblock %}

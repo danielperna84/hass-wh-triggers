@@ -98,13 +98,14 @@ class OTPToken(db.Model):
     token = db.Column(db.String(64), nullable=False)
     created = db.Column(db.Integer, default=0)
     max_age = db.Column(db.Integer, default=300, nullable=False)
+    user = db.Column(db.Integer, nullable=False)
 
     def __init__(self, *args, **kwargs):
         self.created = int(time.time())
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
-        return '<OTPToken %r %s>' % (self.token, self.max_age)
+        return '<OTPToken %r %r %r>' % (self.token, self.max_age, self.user)
 
     def delete(self):
         db.session.delete(self)

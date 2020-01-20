@@ -34,7 +34,7 @@ Because of the nature of webhook triggers your Home Assistant installation has t
 
 ### User registration
 
-When you first run this app and access it with your browser, you will automatically be redirected to and URI like this: `https://yourdomain.com/register/none`. This specific URI only works as long as no users are registered. The user you register as will become the administrator user. Choose a very secure password for this user. The next step will ask you to set up your 2-Factor authentication token. More information on this in the next section.  
+When you first run this app and access it with your browser, you will automatically be redirected to an URI like this: `https://yourdomain.com/register/none`. This specific URI only works as long as no users are registered. The user you register as will become the administrator user. Choose a very secure password for this user. The next step will ask you to set up your 2-Factor authentication token. More information on this in the next section.  
 Registration of additional users require a registration token, created by an user with administrator privileges. These tokens can be created in the _Admin_ menu at _Registration tokens_. Click the _Add token_ button. The page will refresh and display the created token. Click on the token to generate a registration-URI that you can send to users whom you want to grant access. Registration is only possible with a valid token. Attempts to register with invalid tokens result in IP banning after multiple failed attempts.
 
 ### After registration
@@ -48,7 +48,7 @@ To enroll your FIDO2 token enter a name for it, then click _Add FIDO2 token_. Fo
 
 #### TOTP
 
-If you choose to use TOTP, click the _Generate TOTP token_ button. You will be prompted to continue because this process will overwrite existing tokens from a previous enrollment (if you have added a TOTP token before). After confirming the prompt the page will refresh and you will se the _Base32 secret_ the TOTP will be derived from during authentication. Depending on your authenticator you now either have to enter the _Base32 secret_, or you can scan the QR Code displayed below. If you are doing this from a mobile device, tapping the QR Code should automatically add the token to your authenticator application. The QR Code is based on the _Provisioning URI_ you can find here as well. Use this URI if you want to create the QR Code manually.
+If you choose to use TOTP, click the _Generate TOTP token_ button. You will be prompted to continue because this process will overwrite existing tokens from a previous enrollment (if you have added a TOTP token before). After confirming the prompt the page will refresh and you will see the _Base32 secret_ the TOTP will be derived from during authentication. Depending on your authenticator you now either have to enter the _Base32 secret_, or you can scan the QR Code displayed below. If you are doing this from a mobile device, tapping the QR Code should automatically add the token to your authenticator application. The QR Code is based on the _Provisioning URI_ you can find here as well. Use this URI if you want to create the QR Code manually.
 
 ## Automation in Home Assistant
 

@@ -6,9 +6,16 @@
 <div class="table__wrapper">
 <table class="table is-bordered">
     <tbody>
+        <thead>
+            <tr>
+                <th>Token</th><th>Created</th><th>Valid for (seconds)</th><th></th>
+            </tr>
+        </thead>
     {% for token in tokens %}
         <tr>
             <td><button class="button" onclick="document.getElementById('url_token').innerHTML = '{{ token.token }}'">{{ token.token }}</button></td>
+            <td>{{ token.created }}</td>
+            <td>{{ token.max_age }}</td>
             <td><a href="{{ url_for('tokens', del_token=token.id) }}" class="button is-danger">Delete</a></td>
         </tr>
     {% endfor %}
@@ -17,11 +24,19 @@
 <hr>
 <p>Register at: <span class="force-select">{{ baseurl }}<span id="url_token"></span></span></p>
 <hr>
+<h5 class="title is-5">Add registration token</h5>
+<label for="max_age">Valid for (seconds): </label><input type="number" class="input" id="max_age" value="900" placeholder="900" required />
 <button type="button" class="button" onclick="add_token()">Add token</button>
 </div>
 <script>
 function add_token() {
-    fetch("{{ url_for('tokens_add') }}")
+    fetch("{{ url_for('tokens_add') }}", {
+        method: 'post',
+        headers: {
+            "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"
+        },
+        body: 'max_age=' + document.getElementById('max_age').value
+    })
     .then(
         function(response) {
             if (response.status !== 200) {

@@ -81,13 +81,14 @@ class RegToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(64), nullable=False)
     created = db.Column(db.Integer, default=0)
+    max_age = db.Column(db.Integer, default=300, nullable=False)
 
     def __init__(self, *args, **kwargs):
         self.created = int(time.time())
         super().__init__(*args, **kwargs)
 
     def __repr__(self):
-        return '<Token %r>' % (self.token, )
+        return '<Token %r %r %r>' % (self.token, self.created, self.max_age)
 
     def delete(self):
         db.session.delete(self)

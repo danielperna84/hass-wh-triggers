@@ -249,6 +249,11 @@ def register():
         token = RegToken.query.filter_by(token=reg_token).first()
         if not token:
             return make_response(jsonify({'fail': 'Invalid token.'}), 401)
+        if token:
+            now = int(time.time())
+            if now - token.created > token.max_age:
+                token.delete()
+                return make_response(jsonify({'fail': 'Expired token.'}), 401)
     if not util.validate_username(username):
         return make_response(jsonify({'fail': 'Invalid username.'}), 401)
     if not util.validate_display_name(display_name):
@@ -268,6 +273,7 @@ def register():
         icon_url=SITE_URL)
     db.session.add(user)
     db.session.commit()
+    
     if token:
         token.delete()
     login_user(user)
@@ -388,16 +394,23 @@ def tokens():
         if token:
             token.delete()
         return redirect(url_for('tokens'))
+    now = time.time()
+    for token in RegToken.query.all():
+        if now - token.created > token.max_age:
+            token.delete()
     tokens = RegToken.query.all()
     return render_template('tokens.html', tokens=tokens, baseurl=request.url_root + 'register/')
 
 
-@app.route('/tokens/add')
+@app.route('/tokens/add', methods=['POST'])
 @login_required
 def tokens_add():
     if not current_user.is_admin:
         return redirect(url_for('triggers'))
-    token = RegToken(token="%064x" % random.getrandbits(256))
+    max_age = request.values.get('max_age')
+    token = RegToken(
+        token="%064x" % random.getrandbits(256),
+        max_age=int(max_age))
     db.session.add(token)
     db.session.commit()
     return make_response(jsonify({'success': token.id}), 200)

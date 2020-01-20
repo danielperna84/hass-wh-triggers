@@ -30,6 +30,26 @@ Home Assistant provides [Webhook triggers](https://www.home-assistant.io/docs/au
 This tool leverages those triggers to execute automations _remotely_ (it can run on any server in the web that supports Flask apps). Within a trigger you specify the used webhook URI, JSON-data that should be included as a payload, optionally the name of the user that fires the trigger, and also optionally a password that is required to fire the selected trigger. The latter serves to configure multiple triggers, but only allowing certain triggers to be fired if the secret is known to the user.  
 Because of the nature of webhook triggers your Home Assistant installation has to be exposed to the internet. Or at least the webhook part of it. You can configure to disable certificate checks when calling the webhooks if you are using self-signed certificates for Home Assistant. FIDO2 / WebAuthn (the token-part of the built-in security) does not work without certificates. So however you deploy the app, make sure it can be accessed using an encrypted connection.
 
+## Operation
+
+### User registration
+
+When you first run this app and access it with your browser, you will automatically be redirected to and URI like this: `https://yourdomain.com/register/none`. This specific URI only works as long as no users are registered. The user you register as will become the administrator user. Choose a very secure password for this user. The next step will ask you to set up your 2-Factor authentication token. More information on this in the next section.  
+Registration of additional users require a registration token, created by an user with administrator privileges. These tokens can be created in the _Admin_ menu at _Registration tokens_. Click the _Add token_ button. The page will refresh and display the created token. Click on the token to generate a registration-URI that you can send to users whom you want to grant access. Registration is only possible with a valid token. Attempts to register with invalid tokens result in IP banning after multiple failed attempts.
+
+### After registration
+
+Once a user is registered he is automatically logged in and redirected to the 2-Factor configuration. Without the second factor further logins are not possible. Hence this step should __not__ be skipped if the user should be able to log in without manually created OTPs.  
+At the 2-Factor configuration you can set up either (multiple) FIDO2 / WebAuthn tokens or a single TOTP token. FIDO2 is recommended because it attaches authentication to a specific device. You can use TOTP as a fallback or alternative. But keep in mind that the _secrets_ used for TOTP can be enrolled on multiple devices or shared in other ways.
+
+#### FIDO2
+
+To enroll your FIDO2 token enter a name for it, then click _Add FIDO2 token_. Follow the instructions displayed by your browser to complete the enrollment process. If no errors occurred, the token will be added to the table above.
+
+#### TOTP
+
+If you choose to use TOTP, click the _Generate TOTP token_ button. You will be prompted to continue because this process will overwrite existing tokens from a previous enrollment (if you have added a TOTP token before). After confirming the prompt the page will refresh and you will se the _Base32 secret_ the TOTP will be derived from during authentication. Depending on your authenticator you now either have to enter the _Base32 secret_, or you can scan the QR Code displayed below. If you are doing this from a mobile device, tapping the QR Code should automatically add the token to your authenticator application. The QR Code is based on the _Provisioning URI_ you can find here as well. Use this URI if you want to create the QR Code manually.
+
 ## Automation in Home Assistant
 
 This is a minimal automation in Home Assistant (YAML style) that will write a message to the logs at the `warning` level. It includes the trigger data, allowing you to observe what data arrives at Home Assistant after executing the trigger.

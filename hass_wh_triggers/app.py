@@ -111,14 +111,13 @@ with app.app_context():
     except:
         pass
 
-def checkban(addr, increment=True):
+def checkban(addr):
     banned = Banlist.query.filter_by(ip=addr).first()
     if banned:
         if time.time() - banned.last_attempt > BANTIME:
             banned.delete()
-        elif time.time() - banned.last_attempt < BANTIME and banned.failed_attempts > BANLIMIT:
-            if increment:
-                banned.increment()
+        elif banned.failed_attempts > BANLIMIT and time.time() - banned.last_attempt < BANTIME:
+            banned.increment()
             return False
     return True
 
@@ -126,9 +125,7 @@ def checkban(addr, increment=True):
 def add_to_ban(addr):
     print("Adding to banlist: %s" % addr)
     banned = Banlist.query.filter_by(ip=request.remote_addr).first()
-    if banned:
-        banned.increment()
-    else:
+    if not banned:
         banned = Banlist(
             ip=addr,
             failed_attempts=1,
@@ -136,6 +133,8 @@ def add_to_ban(addr):
         )
         db.session.add(banned)
         db.session.commit()
+    else:
+        banned.increment()
 
 
 @login_manager.user_loader
@@ -224,12 +223,12 @@ def banlist():
 
 @app.route('/register/<reg_token>')
 def register_prompt(reg_token):
+    if not checkban(request.remote_addr):
+        abort(401)
     if User.query.all():
         token = RegToken.query.filter_by(token=reg_token).first()
         if not token:
             add_to_ban(request.remote_addr)
-    if not checkban(request.remote_addr, increment=False):
-        abort(401)
     if current_user.is_authenticated:
         return redirect(url_for('triggers'))
     return render_template('register.html', reg_token=reg_token)
@@ -248,19 +247,22 @@ def register():
     if User.query.all():
         token = RegToken.query.filter_by(token=reg_token).first()
         if not token:
-            return make_response(jsonify({'fail': 'Invalid token.'}), 401)
+            print("Invalid token")
+            add_to_ban(request.remote_addr)
+            return make_response(jsonify({'status': 'error'}), 401)
         if token:
             now = int(time.time())
             if now - token.created > token.max_age:
                 token.delete()
-                return make_response(jsonify({'fail': 'Expired token.'}), 401)
+                flash("Registration token has expired. Please acquire a new one.")
+                return redirect(url_for('register_prompt', reg_token=reg_token))
     if not util.validate_username(username):
-        return make_response(jsonify({'fail': 'Invalid username.'}), 401)
-    if not util.validate_display_name(display_name):
-        return make_response(jsonify({'fail': 'Invalid display name.'}), 401)
+        flash("Invalid username")
+        return redirect(url_for('register_prompt', reg_token=reg_token))
 
     if User.query.filter_by(username=username).first():
-        return make_response(jsonify({'fail': 'User already exists.'}), 401)
+        flash("User already exists")
+        return redirect(url_for('register_prompt', reg_token=reg_token))
 
     is_admin = not bool(User.query.all())
 
@@ -651,28 +653,34 @@ def authenticate_begin():
     if not checkban(request.remote_addr):
         abort(401)
     if not Authenticator.query.all():
-        abort(404)
+        abort(401)
 
     username = request.form.get('login_username')
     password = request.form.get('login_password')
 
     if not util.validate_username(username):
-        return make_response(jsonify({'fail': 'Invalid username.'}), 401)
+        print("Invalid username")
+        add_to_ban(request.remote_addr)
+        return make_response(jsonify({'fail': 'error'}), 401)
 
     user = User.query.filter_by(username=username).first()
 
     if not user:
-        return make_response(jsonify({'fail': 'User does not exist.'}), 401)
+        print("User does not exist")
+        add_to_ban(request.remote_addr)
+        return make_response(jsonify({'fail': 'error'}), 401)
     if not user.check_password(password):
+        print("Incorrect password")
         user.failed()
         add_to_ban(request.remote_addr)
-        return make_response(jsonify({'fail': 'Wrong password'}), 401)
+        return make_response(jsonify({'fail': 'error'}), 401)
 
     authenticators = []
     for authenticator in Authenticator.query.filter_by(user=user.id):
         authenticators.append(AttestedCredentialData(authenticator.credential))
     if not authenticators:
-        return make_response(jsonify({'fail': 'No authenticator enrolled'}), 401)
+        print("No authenticator enrolled")
+        return make_response(jsonify({'fail': 'error'}), 401)
     auth_data, state = server.authenticate_begin(authenticators)
     session["state"] = state
     session["lid"] = user.id
@@ -685,7 +693,7 @@ def authenticate_complete():
     if not checkban(request.remote_addr):
         abort(401)
     if not Authenticator.query.all():
-        abort(404)
+        abort(401)
 
     authenticators = []
     user = User.query.filter_by(id=int(session.pop("lid"))).first()

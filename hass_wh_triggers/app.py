@@ -498,13 +498,14 @@ def triggers_fire(triggerid):
     data = json.loads(trigger.trigger_json)
     if trigger.include_user:
         data['user'] = current_user.username
+    print("Trigger fired:", trigger.caption)
     req = urllib.request.Request(trigger.webhook_uri,
                                  headers=headers, method='POST',
                                  data=bytes(json.dumps(data).encode('utf-8')))
     try:
         with urllib.request.urlopen(req) as response:
             if response.code != 200:
-                print("Trigger %s failed" % trigger.caption)
+                print("Trigger failed:" % trigger.caption)
                 return make_response(jsonify({"status": "failed", "trigger": trigger.id}), 200)
     except Exception as err:
         print(err)

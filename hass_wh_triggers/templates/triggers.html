@@ -13,7 +13,8 @@ function fire(id, password) {
     else {
         var trigger_pw = "";
     }
-    fetch('triggers/fire/' + id, {
+
+    fetch("{{ url_for('triggers_fire', triggerid=0) }}".replace("0", id), {
         method: 'post',
         headers: {
             "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"

@@ -46,7 +46,7 @@ function toggle_password() {
 }
 
 function load_trigger(id) {
-    fetch('triggers/' + id)
+    fetch("{{ url_for('triggers_json', triggerid=0) }}".replace("0", id))
     .then(
         function(response) {
             if (response.status !== 200) {

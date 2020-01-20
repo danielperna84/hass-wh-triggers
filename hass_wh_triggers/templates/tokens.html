@@ -21,7 +21,7 @@
 </div>
 <script>
 function add_token() {
-    fetch('tokens/add')
+    fetch("{{ url_for('tokens_add') }}")
     .then(
         function(response) {
             if (response.status !== 200) {

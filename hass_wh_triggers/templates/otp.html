@@ -39,7 +39,7 @@
 </div>
 <script>
 function add_token() {
-    fetch('otp/add', {
+    fetch("{{ url_for('otp_add') }}", {
         method: 'post',
         headers: {
             "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"

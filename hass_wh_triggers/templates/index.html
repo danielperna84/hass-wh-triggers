@@ -22,7 +22,7 @@ function authenticate(e) {
     const totp = document.getElementById('login_totp').value;
     const otp = document.getElementById('login_otp').value;
     if (totp || otp) {
-        fetch('/login/otp', {
+        fetch("{{ url_for('login_otp') }}", {
             method: 'POST',
             body: formData
         }).then(function(response) {
@@ -31,12 +31,12 @@ function authenticate(e) {
                 return;
             }
             else {
-                window.location = '/triggers';
+                window.location = "{{ url_for('triggers') }}";
             }
         });
     }
     else {
-        fetch('/api/authenticate/begin', {
+        fetch("{{ url_for('authenticate_begin') }}", {
             method: 'POST',
             body: formData
         }).then(function(response) {
@@ -45,7 +45,7 @@ function authenticate(e) {
         }).then(CBOR.decode).then(function(options) {
             return navigator.credentials.get(options);
         }).then(function(assertion) {
-            return fetch('/api/authenticate/complete', {
+            return fetch("{{ url_for('authenticate_complete') }}", {
                 method: 'POST',
                 headers: {'Content-Type': 'application/cbor'},
                 body: CBOR.encode({
@@ -61,12 +61,12 @@ function authenticate(e) {
         }, function(reason) {
             alert(reason);
         }).then(function() {
-            window.location = '/triggers';
+            window.location = "{{ url_for('triggers') }}";
         });
     }
 }
 </script>
-<form id="login-form" name="login" method="post" action="/login/debug">
+<form id="login-form" name="login" method="post" action="{{ url_for('login_debug') }}">
     <input type="text" name="login_username" class="input" placeholder="Username" autofocus required /><br />
     <input type="password" name="login_password" class="input" placeholder="Password" required /><br />
     <input type="number" id="login_totp" name="login_totp" class="input" max="999999" placeholder="TOTP (e.g. 123456, if available)" /><br /><br />

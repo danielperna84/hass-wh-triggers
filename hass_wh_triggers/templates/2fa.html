@@ -12,7 +12,7 @@
         e.preventDefault();
         const form = document.querySelector('#register-form');
         const formData = new FormData(form);
-        fetch('/api/register/begin', {
+        fetch('{{ url_for("register_begin") }}', {
             method: 'POST',
             body: formData
         }).then(function(response) {
@@ -21,7 +21,7 @@
         }).then(CBOR.decode).then(function(options) {
             return navigator.credentials.create(options);
         }).then(function(attestation) {
-            return fetch('/api/register/complete', {
+            return fetch('{{ url_for("register_complete") }}', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/cbor'},
                 body: CBOR.encode({
@@ -43,7 +43,7 @@
         if (!confirm("Warning. This will replace an existing TOTP token!")) {
             return;
         }
-        fetch('/totp/generate', {})
+        fetch('{{ url_for("totp_generate") }}', {})
         .then(
             function(response) {
                 if (response.status !== 200) {

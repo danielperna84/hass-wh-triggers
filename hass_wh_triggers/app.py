@@ -10,7 +10,7 @@ import base64
 import datetime
 import urllib.request
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -288,10 +288,11 @@ def register():
         is_admin=is_admin,
         password_hash=password_hash,
         sign_count=0,
+        last_login=int(time.time()),
         icon_url=SITE_URL)
     db.session.add(user)
     db.session.commit()
-    
+
     if token:
         token.delete()
     login_user(user)
@@ -318,6 +319,9 @@ def login_debug():
     if not user.check_password(password):
         return make_response(jsonify({'fail': 'Wrong password'}), 401)
     login_user(user)
+    user.last_login = int(time.time())
+    db.session.add(user)
+    db.session.commit()
     unban(request.remote_addr)
     return redirect(url_for('zfa'))
 
@@ -364,10 +368,16 @@ def login_otp():
                          iterations=100000, backend=default_backend())
         key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY))
         f = Fernet(key)
-        if pyotp.totp.TOTP(f.decrypt(user.totp_secret)).verify(totp):
-            login_user(user)
-            unban(request.remote_addr)
-            return make_response(jsonify({'status': 'success'}), 200)
+        try:
+            if pyotp.totp.TOTP(f.decrypt(user.totp_secret)).verify(totp):
+                login_user(user)
+                user.last_login = int(time.time())
+                db.session.add(user)
+                db.session.commit()
+                unban(request.remote_addr)
+                return make_response(jsonify({'status': 'success'}), 200)
+        except InvalidToken:
+            print("Invalid TOTP. Secret key may have changed")
         print("Incorrect TOTP")
 
     if otp and otps:
@@ -376,6 +386,9 @@ def login_otp():
             if now - otp_token.created < otp_token.max_age:
                 otp_token.delete()
                 login_user(user)
+                user.last_login = int(time.time())
+                db.session.add(user)
+                db.session.commit()
                 unban(request.remote_addr)
                 return make_response(jsonify({'status': 'success'}), 200)
         print("Invalid OTP")
@@ -408,9 +421,13 @@ def zfa():
     f = Fernet(key)
     totp_uri = ""
     if user.totp_secret:
-        totp_secret = f.decrypt(bytes(user.totp_secret)).decode("utf-8")
-        totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
-            name=current_user.username, issuer_name=TITLE)
+        try:
+            totp_secret = f.decrypt(bytes(user.totp_secret)).decode("utf-8")
+            totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
+                name=current_user.username, issuer_name=TITLE)
+        except InvalidToken:
+            print("Invalid token. Secret key may have changed.")
+            totp_secret = "Invalid"
     else:
         totp_secret = None
     return render_template('2fa.html', authenticators=authenticators,

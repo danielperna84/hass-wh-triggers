@@ -319,6 +319,7 @@ def login_debug():
     if not user.check_password(password):
         return make_response(jsonify({'fail': 'Wrong password'}), 401)
     login_user(user)
+    user.sign_count = user.sign_count + 1
     user.last_login = int(time.time())
     db.session.add(user)
     db.session.commit()
@@ -371,6 +372,7 @@ def login_otp():
         try:
             if pyotp.totp.TOTP(f.decrypt(user.totp_secret)).verify(totp):
                 login_user(user)
+                user.sign_count = user.sign_count + 1
                 user.last_login = int(time.time())
                 db.session.add(user)
                 db.session.commit()
@@ -386,6 +388,7 @@ def login_otp():
             if now - otp_token.created < otp_token.max_age:
                 otp_token.delete()
                 login_user(user)
+                user.sign_count = user.sign_count + 1
                 user.last_login = int(time.time())
                 db.session.add(user)
                 db.session.commit()

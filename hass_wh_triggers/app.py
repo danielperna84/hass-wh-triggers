@@ -6,8 +6,14 @@ import ssl
 import time
 import json
 import random
+import base64
 import datetime
 import urllib.request
+
+from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from flask import Flask
 from flask import flash
@@ -83,6 +89,10 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'index'
 
+if isinstance(app.secret_key, bytes):
+    ENCRYPTION_KEY = app.secret_key
+else:
+    ENCRYPTION_KEY = app.secret_key.encode("utf-8")
 SITE_URL = 'https://example.com'
 
 TITLE = 'HASS-WH-Triggers'
@@ -123,7 +133,7 @@ def checkban(addr):
 
 
 def add_to_ban(addr):
-    print("Adding to banlist: %s" % addr)
+    print("Adding to banlist:", addr)
     banned = Banlist.query.filter_by(ip=request.remote_addr).first()
     if not banned:
         banned = Banlist(
@@ -136,6 +146,12 @@ def add_to_ban(addr):
     else:
         banned.increment()
 
+
+def unban(addr):
+    banned = Banlist.query.filter_by(ip=request.remote_addr).first()
+    if banned:
+        print("Removing from banlist:", addr)
+        banned.delete()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -302,6 +318,7 @@ def login_debug():
     if not user.check_password(password):
         return make_response(jsonify({'fail': 'Wrong password'}), 401)
     login_user(user)
+    unban(request.remote_addr)
     return redirect(url_for('zfa'))
 
 
@@ -342,8 +359,14 @@ def login_otp():
         return make_response(jsonify({'status': 'error'}), 401)
 
     if totp and user.totp_secret:
-        if pyotp.totp.TOTP(user.totp_secret).verify(totp):
+        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
+                         salt=username.encode("utf-8"),
+                         iterations=100000, backend=default_backend())
+        key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY))
+        f = Fernet(key)
+        if pyotp.totp.TOTP(f.decrypt(user.totp_secret)).verify(totp):
             login_user(user)
+            unban(request.remote_addr)
             return make_response(jsonify({'status': 'success'}), 200)
         print("Incorrect TOTP")
 
@@ -353,6 +376,7 @@ def login_otp():
             if now - otp_token.created < otp_token.max_age:
                 otp_token.delete()
                 login_user(user)
+                unban(request.remote_addr)
                 return make_response(jsonify({'status': 'success'}), 200)
         print("Invalid OTP")
 
@@ -377,11 +401,18 @@ def zfa():
     for authenticator in Authenticator.query.filter_by(user=current_user.id):
         authenticators.append({'id': authenticator.id, 'name': authenticator.name, 'user': authenticator.user})
     user = User.query.filter_by(username=current_user.username).first()
-    totp_secret = user.totp_secret
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
+                     salt=user.username.encode("utf-8"),
+                     iterations=100000, backend=default_backend())
+    key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY))
+    f = Fernet(key)
     totp_uri = ""
-    if totp_secret:
-         totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
-             name=current_user.username, issuer_name=TITLE)
+    if user.totp_secret:
+        totp_secret = f.decrypt(bytes(user.totp_secret)).decode("utf-8")
+        totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
+            name=current_user.username, issuer_name=TITLE)
+    else:
+        totp_secret = None
     return render_template('2fa.html', authenticators=authenticators,
                            totp_secret=totp_secret, totp_uri=totp_uri)
 
@@ -461,7 +492,12 @@ def otp_add():
 @login_required
 def totp_generate():
     user = User.query.filter_by(username=current_user.username).first()
-    user.totp_secret = pyotp.random_base32()
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
+                     salt=user.username.encode("utf-8"),
+                     iterations=100000, backend=default_backend())
+    key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY))
+    f = Fernet(key)
+    user.totp_secret = f.encrypt(pyotp.random_base32().encode("utf-8"))
     db.session.add(user)
     db.session.commit()
     return make_response(jsonify({"status": "success"}), 200)
@@ -722,9 +758,7 @@ def authenticate_complete():
     user.last_login = int(time.time())
     db.session.add(user)
     db.session.commit()
-    banned = Banlist.query.filter_by(ip=request.remote_addr).first()
-    if banned:
-        banned.delete()
+    unban(request.remote_addr)
     return cbor.encode({"status": "OK"})
 
 

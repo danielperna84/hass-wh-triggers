@@ -425,7 +425,7 @@ def zfa():
     f = Fernet(key)
     totp_secret = None
     totp_uri = ""
-    if user.totp_secret and not user.totp_initialized:
+    if user.totp_secret:
         try:
             totp_secret = f.decrypt(bytes(user.totp_secret)).decode("utf-8")
             totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
@@ -433,8 +433,11 @@ def zfa():
         except InvalidToken:
             print("Invalid token. Secret key may have changed.")
             totp_secret = "Invalid"
-    if totp_secret is None and user.totp_initialized:
-        totp_secret = "Initialized"
+    if not totp_secret == "Invalid":
+        if totp_secret is not None and user.totp_initialized:
+            totp_secret = "Initialized"
+            totp_uri = ""
+
     return render_template('2fa.html', authenticators=authenticators,
                            totp_secret=totp_secret, totp_uri=totp_uri)
 
@@ -520,6 +523,17 @@ def totp_generate():
     key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY))
     f = Fernet(key)
     user.totp_secret = f.encrypt(pyotp.random_base32().encode("utf-8"))
+    user.totp_initialized = False
+    db.session.add(user)
+    db.session.commit()
+    return make_response(jsonify({"status": "success"}), 200)
+
+
+@app.route('/totp/delete')
+@login_required
+def totp_delete():
+    user = User.query.filter_by(username=current_user.username).first()
+    user.totp_secret = b""
     user.totp_initialized = False
     db.session.add(user)
     db.session.commit()

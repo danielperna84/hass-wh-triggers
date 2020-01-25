@@ -380,7 +380,7 @@ def login_otp():
                 unban(request.remote_addr)
                 return make_response(jsonify({'status': 'success'}), 200)
         except InvalidToken:
-            print("Invalid TOTP. Secret key may have changed")
+            print("Invalid TOTP. Server secret key may has changed")
         print("Incorrect TOTP")
 
     if otp and otps:
@@ -431,7 +431,7 @@ def zfa():
             totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
                 name=current_user.username, issuer_name=TITLE)
         except InvalidToken:
-            print("Invalid token. Secret key may have changed.")
+            print("Invalid token. Server secret key may has changed.")
             totp_secret = "Invalid"
     if not totp_secret == "Invalid":
         if totp_secret is not None and user.totp_initialized:

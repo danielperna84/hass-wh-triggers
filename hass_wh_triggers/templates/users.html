@@ -7,7 +7,7 @@
 <table class="table is-bordered">
     <thead>
         <tr>
-            <th>ID</th><th>Username</th><th>Logins</th><th>Last login</th><th>Failed logins</th><th>Last failed</th><th>Admin</th><th></th>
+            <th>ID</th><th>Username</th><th>Logins</th><th>Last login</th><th>Failed logins</th><th>Last failed</th><th>TOTP</th><th>Admin</th><th></th>
         </tr>
     </thead>
     <tbody>
@@ -19,6 +19,7 @@
             <td>{{ user.last_login }}</td>
             <td>{{ user.failed_logins }}</td>
             <td>{{ user.last_failed }}</td>
+            <td>{{ user.totp_initialized }}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_admin(this)" {% if user.is_admin %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td><a href="{{ url_for('users', del_user=user.id) }}" class="button is-danger">Delete</a></td>
         </tr>

@@ -17,6 +17,7 @@ class User(db.Model, UserMixin):
     last_failed = db.Column(db.Integer, default=0)
     icon_url = db.Column(db.String(2083), nullable=False)
     totp_secret = db.Column(db.LargeBinary, unique=False, nullable=True)
+    totp_initialized = db.Column(db.Boolean, default=False, nullable=False)
 
     def __init__(self, *args, **kwargs):
         self.created = int(time.time())

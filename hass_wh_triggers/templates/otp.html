@@ -17,7 +17,7 @@
             <td><button class="button" onclick="document.getElementById('url_token').innerHTML = '{{ token.token }}'">{{ token.token }}</button></td>
             <td>{{ token.created }}</td>
             <td>{{ token.max_age }}</td>
-            <td><a href="{{ url_for('tokens', del_token=token.id) }}" class="button is-danger">Delete</a></td>
+            <td><a href="{{ url_for('otp', del_token=token.id) }}" class="button is-danger">Delete</a></td>
         </tr>
     {% endfor %}
     </tbody>

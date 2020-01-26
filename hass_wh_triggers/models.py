@@ -18,6 +18,7 @@ class User(db.Model, UserMixin):
     icon_url = db.Column(db.String(2083), nullable=False)
     totp_secret = db.Column(db.LargeBinary, unique=False, nullable=True)
     totp_initialized = db.Column(db.Boolean, default=False, nullable=False)
+    otp_only = db.Column(db.Boolean, default=False, nullable=False)
 
     def __init__(self, *args, **kwargs):
         self.created = int(time.time())

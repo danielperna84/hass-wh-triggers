@@ -363,7 +363,7 @@ def login_otp():
         print("No (T)OTP available")
         return make_response(jsonify({'status': 'error'}), 401)
 
-    if totp and user.totp_secret:
+    if totp and user.totp_secret and not user.otp_only:
         kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
                          salt=username.encode("utf-8"),
                          iterations=100000, backend=default_backend())
@@ -484,7 +484,7 @@ def otp():
         token = OTPToken.query.filter_by(id=del_token).first()
         if token:
             token.delete()
-        return redirect(url_for('tokens'))
+        return redirect(url_for('otp'))
     now = time.time()
     for token in OTPToken.query.all():
         if now - token.created > token.max_age:
@@ -570,6 +570,19 @@ def users_toggle_admin(userid):
     db.session.add(user)
     db.session.commit()
     return make_response(jsonify({'success': user.is_admin}), 200)
+
+
+@app.route('/users/toggle_otp/<int:userid>')
+@login_required
+def users_toggle_otp(userid):
+    if not current_user.is_admin:
+        return make_response(jsonify({'fail': 'unauthorized'}), 401)
+    user = load_user(userid)
+    user.otp_only = not user.otp_only
+    db.session.add(user)
+    db.session.commit()
+    return make_response(jsonify({'success': user.otp_only}), 200)
+
 
 @app.route('/triggers')
 @login_required

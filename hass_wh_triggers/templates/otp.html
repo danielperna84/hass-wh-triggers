@@ -8,15 +8,15 @@
     <tbody>
         <thead>
             <tr>
-                <th>User</th><th>Token</th><th>Created</th><th>Valid for (seconds)</th><th></th>
+                <th>User</th><th>Token</th><th>Created</th><th>Valid for (minutes)</th><th></th>
             </tr>
         </thead>
     {% for token in tokens %}
         <tr>
             <td>{{ token.user }}</td>
             <td><button class="button" onclick="document.getElementById('url_token').innerHTML = '{{ token.token }}'">{{ token.token }}</button></td>
-            <td>{{ token.created }}</td>
-            <td>{{ token.max_age }}</td>
+            <td>{{ token.created | ctime }}</td>
+            <td>{{ (token.max_age / 60) | int }}</td>
             <td><a href="{{ url_for('otp', del_token=token.id) }}" class="button is-danger">Delete</a></td>
         </tr>
     {% endfor %}

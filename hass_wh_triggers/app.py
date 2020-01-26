@@ -174,6 +174,11 @@ def inject_dict_for_all_templates():
     return dict(app_title=TITLE, debug=app.debug)
 
 
+@app.template_filter('ctime')
+def timectime(s):
+    return time.ctime(s)
+
+
 @app.route('/index')
 @app.route('/')
 def index():

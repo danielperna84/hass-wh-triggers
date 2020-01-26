@@ -16,9 +16,9 @@
             <td>{{ user.id }}</td>
             <td>{{ user.username }}</td>
             <td>{{ user.sign_count }}</td>
-            <td>{{ user.last_login }}</td>
+            <td>{{ user.last_login | ctime }}</td>
             <td>{{ user.failed_logins }}</td>
-            <td>{{ user.last_failed }}</td>
+            <td>{{ user.last_failed | ctime }}</td>
             <td>{{ user.totp_initialized }}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_otp(this)" {% if user.otp_only %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_admin(this)" {% if user.is_admin %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>

@@ -121,6 +121,7 @@ with app.app_context():
     except:
         pass
 
+
 def checkban(addr):
     banned = Banlist.query.filter_by(ip=addr).first()
     if banned:
@@ -128,6 +129,7 @@ def checkban(addr):
             banned.delete()
         elif banned.failed_attempts > BANLIMIT and time.time() - banned.last_attempt < BANTIME:
             banned.increment()
+            print("Denying access from:", addr)
             return False
     return True
 

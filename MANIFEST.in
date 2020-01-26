@@ -1,0 +1,4 @@
+include hass_wh_triggers/templates/*.html
+include hass_wh_triggers/static/css/*.css
+include hass_wh_triggers/static/js/*.js
+include hass_wh_triggers/fido2/public_suffix_list.dat

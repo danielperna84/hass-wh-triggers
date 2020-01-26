@@ -19,6 +19,7 @@
             <td>{{ user.last_login | ctime }}</td>
             <td>{{ user.failed_logins }}</td>
             <td>{{ user.last_failed | ctime }}</td>
+            <td>{% if user.totp_secret %}<button id="del_totp" type="button" class="button is-danger" onclick="del_totp('{{ user.username }}')">Delete</button>{% endif %}</td>
             <td>{{ user.totp_initialized }}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_otp(this)" {% if user.otp_only %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_admin(this)" {% if user.is_admin %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
@@ -87,6 +88,32 @@ function toggle_otp(obj) {
         console.log("Fetch Error :-S", err);
     });
 }
+
+function del_totp(username) {
+        if (!confirm("Warning. This will delete the TOTP token for user " + username + "!")) {
+            return;
+        }
+        fetch('{{ url_for("totp_delete") }}/' + username, {})
+        .then(
+            function(response) {
+                if (response.status !== 200) {
+                    alert("Could not delete TOTP.");
+                    return;
+                }
+                response.json().then(function(data) {
+                    if (data.status == "success") {
+                        window.location.reload();
+                    }
+                    else {
+                        alert("Error while deleting TOTP.");
+                    }
+                });
+            }
+        )
+        .catch(function(err) {
+            console.log("Fetch Error :-S", err);
+        });
+    }
 </script>
 {% endif %}
 {% endblock %}

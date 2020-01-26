@@ -550,6 +550,19 @@ def totp_delete():
     return make_response(jsonify({"status": "success"}), 200)
 
 
+@app.route('/totp/delete/<username>')
+@login_required
+def totp_delete_username(username):
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return make_response(jsonify({"status": "error"}), 200)
+    user.totp_secret = b""
+    user.totp_initialized = False
+    db.session.add(user)
+    db.session.commit()
+    return make_response(jsonify({"status": "success"}), 200)
+
+
 @app.route('/users', methods=['GET'])
 @login_required
 def users():

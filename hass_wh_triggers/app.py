@@ -189,8 +189,7 @@ def index():
     users = User.query.all()
     if not users:
         return redirect(url_for('register_prompt', reg_token="none"))
-    otp = request.args.get('otp')
-    return render_template('index.html', otp=otp)
+    return render_template('index.html')
 
 
 @app.route('/about')
@@ -500,10 +499,11 @@ def otp():
         if now - token.created > token.max_age:
             token.delete()
     tokens = OTPToken.query.all()
-    users = []
-    for user in User.query.all():
-        users.append({"id": user.id, "username": user.username})
-    return render_template('otp.html', tokens=tokens, users=users, baseurl=request.url_root + 'index?otp=')
+    users = User.query.all()
+    usermap = {}
+    for user in users:
+        usermap[user.id] = user.username
+    return render_template('otp.html', tokens=tokens, users=users, usermap=usermap, baseurl=request.url_root + 'index?otp=')
 
 
 @app.route('/otp/add', methods=['POST'])
@@ -564,10 +564,13 @@ def users():
             user.delete()
         return redirect(url_for('users'))
     users = User.query.all()
+    usermap = {}
+    for user in users:
+        usermap[user.id] = user.username
     authenticators = []
     for authenticator in Authenticator.query.all():
         authenticators.append({'id': authenticator.id, 'name': authenticator.name, 'user': authenticator.user})
-    return render_template('users.html', users=users, authenticators=authenticators)
+    return render_template('users.html', users=users, usermap=usermap, authenticators=authenticators)
 
 
 @app.route('/users/toggle_admin/<int:userid>')

@@ -42,7 +42,7 @@
             <tr>
                 <td>{{ authenticator.id }}</td>
                 <td>{{ authenticator.name }}</td>
-                <td>{{ authenticator.user }}</td>
+                <td>{{ usermap[authenticator.user] }}</td>
                 <td><a href="{{ url_for('zfa', del_authenticator=authenticator.id) }}" class="button is-danger">Delete</a></td>
             </tr>
         {% endfor %}

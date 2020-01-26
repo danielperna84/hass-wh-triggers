@@ -18,9 +18,8 @@
             <td>{{ user.sign_count }}</td>
             <td>{{ user.last_login | ctime }}</td>
             <td>{{ user.failed_logins }}</td>
-            <td>{{ user.last_failed | ctime }}</td>
+            <td>{% if user.last_failed %}{{ user.last_failed | ctime }}{% endif %}</td>
             <td>{% if user.totp_secret %}<button id="del_totp" type="button" class="button is-danger" onclick="del_totp('{{ user.username }}')">Delete</button>{% endif %}</td>
-            <td>{{ user.totp_initialized }}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_otp(this)" {% if user.otp_only %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_admin(this)" {% if user.is_admin %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td><a href="{{ url_for('users', del_user=user.id) }}" class="button is-danger">Delete</a></td>

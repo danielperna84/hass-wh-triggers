@@ -260,6 +260,7 @@ def register():
     if not checkban(request.remote_addr):
         abort(401)
     token = None
+    otp_only = False
     username = request.form.get('register_username')
     password_hash = generate_password_hash(request.form.get('register_password'))
     display_name = username
@@ -277,6 +278,7 @@ def register():
                 token.delete()
                 flash("Registration token has expired. Please acquire a new one.")
                 return redirect(url_for('register_prompt', reg_token=reg_token))
+            otp_only = token.otp_only
     if not util.validate_username(username):
         flash("Invalid username")
         return redirect(url_for('register_prompt', reg_token=reg_token))
@@ -291,6 +293,7 @@ def register():
         username=username,
         display_name=display_name,
         is_admin=is_admin,
+        otp_only=otp_only,
         password_hash=password_hash,
         sign_count=0,
         last_login=int(time.time()),
@@ -471,9 +474,11 @@ def tokens_add():
     if not current_user.is_admin:
         return redirect(url_for('triggers'))
     max_age = request.values.get('max_age')
+    otp_only = True if request.values.get('otp_only') == '1' else False
     token = RegToken(
         token="%064x" % random.getrandbits(256),
-        max_age=int(max_age) * 60)
+        max_age=int(max_age) * 60,
+        otp_only=otp_only)
     db.session.add(token)
     db.session.commit()
     return make_response(jsonify({'success': token.id}), 200)

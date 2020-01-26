@@ -84,6 +84,7 @@ class RegToken(db.Model):
     token = db.Column(db.String(64), nullable=False)
     created = db.Column(db.Integer, default=0)
     max_age = db.Column(db.Integer, default=300, nullable=False)
+    otp_only = db.Column(db.Boolean, default=True, nullable=False)
 
     def __init__(self, *args, **kwargs):
         self.created = int(time.time())

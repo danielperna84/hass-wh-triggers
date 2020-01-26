@@ -8,7 +8,7 @@
     <tbody>
         <thead>
             <tr>
-                <th>Token</th><th>Created</th><th>Valid for (minutes)</th><th></th>
+                <th>Token</th><th>Created</th><th>Valid for (minutes)</th><th>OTP only</th><th></th>
             </tr>
         </thead>
     {% for token in tokens %}
@@ -16,6 +16,7 @@
             <td><button class="button" onclick="document.getElementById('url_token').innerHTML = '{{ token.token }}'">{{ token.token }}</button></td>
             <td>{{ token.created | ctime }}</td>
             <td>{{ (token.max_age / 60) | int }}</td>
+            <td>{{ token.otp_only }}</td>
             <td><a href="{{ url_for('tokens', del_token=token.id) }}" class="button is-danger">Delete</a></td>
         </tr>
     {% endfor %}
@@ -26,16 +27,24 @@
 <hr>
 <h5 class="title is-5">Add registration token</h5>
 <label for="max_age">Valid for (minutes): </label><input type="number" class="input" id="max_age" value="15" placeholder="15" required />
+<label for="otp_only">OTP only: </label><input type="checkbox" id="otp_only" name="otp_only" /><br />
 <button type="button" class="button" onclick="add_token()">Add token</button>
 </div>
 <script>
 function add_token() {
+    var body = 'max_age=' + document.getElementById('max_age').value;
+    if (document.getElementById('otp_only').checked) {
+        body = body + "&otp_only=1";
+    }
+    else {
+        body = body + "&otp_only=0";
+    }
     fetch("{{ url_for('tokens_add') }}", {
         method: 'post',
         headers: {
             "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"
         },
-        body: 'max_age=' + document.getElementById('max_age').value
+        body: body
     })
     .then(
         function(response) {

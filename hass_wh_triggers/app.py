@@ -468,7 +468,7 @@ def tokens_add():
     max_age = request.values.get('max_age')
     token = RegToken(
         token="%064x" % random.getrandbits(256),
-        max_age=int(max_age))
+        max_age=int(max_age) * 60)
     db.session.add(token)
     db.session.commit()
     return make_response(jsonify({'success': token.id}), 200)
@@ -505,7 +505,7 @@ def otp_add():
     max_age = request.values.get('max_age')
     token = OTPToken(
         token="%064x" % random.getrandbits(256),
-        max_age=int(max_age),
+        max_age=int(max_age) * 60,
         user=int(user)
         )
     db.session.add(token)

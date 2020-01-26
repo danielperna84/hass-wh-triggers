@@ -63,6 +63,18 @@ class Setting(db.Model):
     def __repr__(self):
         return '<Setting %r %r>' % (self.parameter, self.value)
 
+class TriggerUserMap(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    trigger = db.Column(db.Integer, unique=False, default=0)
+    user = db.Column(db.Integer, unique=False, default=0)
+
+    def __repr__(self):
+        return '<TriggerUserMap %r %r %r>' % (self.trigger, self.user)
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
 class Trigger(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     caption = db.Column(db.String(64), unique=False, nullable=False)

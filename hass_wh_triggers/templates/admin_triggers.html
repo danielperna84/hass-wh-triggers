@@ -5,7 +5,7 @@
 <h4 class="title is-4">Triggers</h4>
 <table class="table is-bordered">
         {% for trigger in triggers %}
-        <tr><td>{{ trigger.caption }}&nbsp;</td><td><button class="button is-warning is-small" onclick="load_trigger({{ trigger.id }})">Edit</button></td><td><a class="button is-danger is-small" href="admin_triggers?del_trigger={{ trigger.id }}">Delete</a></td></tr>
+        <tr><td>{{ trigger.caption }}&nbsp;</td><td><button class="button is-warning is-small" onclick="load_trigger(this, {{ trigger.id }})">Edit</button></td><td><a class="button is-danger is-small" href="admin_triggers?del_trigger={{ trigger.id }}">Delete</a></td></tr>
         {% endfor %}
 </table>
 <hr>
@@ -45,12 +45,14 @@ function toggle_password() {
     }
 }
 
-function load_trigger(id) {
+function load_trigger(obj, id) {
+    obj.classList.add("is-loading");
     fetch("{{ url_for('triggers_json', triggerid=0) }}".replace("0", id))
     .then(
         function(response) {
             if (response.status !== 200) {
                 alert("Could not load trigger data");
+                obj.classList.remove("is-loading");
                 return;
             }
             response.json().then(function(data) {
@@ -61,11 +63,13 @@ function load_trigger(id) {
                 document.getElementById("webhook_uri").value = data.webhook_uri;
                 document.getElementById("password").value = data.password;
                 document.getElementById("id").value = data.id;
+                obj.classList.remove("is-loading");
             });
         }
     )
     .catch(function(err) {
         console.log("Fetch Error :-S", err);
+        obj.classList.remove("is-loading");
     });
 }
 </script>

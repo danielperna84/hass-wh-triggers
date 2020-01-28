@@ -44,11 +44,13 @@
         if (!confirm("Warning. This will replace an existing TOTP token!")) {
             return;
         }
+        document.getElementById('gen_totp').classList.add("is-loading");
         fetch('{{ url_for("totp_generate") }}', {})
         .then(
             function(response) {
                 if (response.status !== 200) {
                     alert("Could not generate TOTP.");
+                    document.getElementById('gen_totp').classList.remove("is-loading");
                     return;
                 }
                 response.json().then(function(data) {
@@ -57,12 +59,14 @@
                     }
                     else {
                         alert("Error while generating TOTP.");
+                        document.getElementById('gen_totp').classList.remove("is-loading");
                     }
                 });
             }
         )
         .catch(function(err) {
             console.log("Fetch Error :-S", err);
+            document.getElementById('gen_totp').classList.remove("is-loading");
         });
     }
 
@@ -70,11 +74,13 @@
         if (!confirm("Warning. This will delete an existing TOTP token!")) {
             return;
         }
+        document.getElementById('del_totp').classList.add("is-loading");
         fetch('{{ url_for("totp_delete") }}', {})
         .then(
             function(response) {
                 if (response.status !== 200) {
                     alert("Could not delete TOTP.");
+                    document.getElementById('del_totp').classList.remove("is-loading");
                     return;
                 }
                 response.json().then(function(data) {
@@ -83,12 +89,14 @@
                     }
                     else {
                         alert("Error while deleting TOTP.");
+                        document.getElementById('del_totp').classList.remove("is-loading");
                     }
                 });
             }
         )
         .catch(function(err) {
             console.log("Fetch Error :-S", err);
+            document.getElementById('del_totp').classList.remove("is-loading");
         });
     }
     </script>

@@ -3,10 +3,10 @@
 {% block content %}
 {% if current_user.is_authenticated %}
 {% for trigger in triggers %}
-<p><button class="button is-outlined is-fullwidth" onclick="fire({{ trigger.id }}, {% if trigger.password | length %}true{% else %}false{% endif %})">{{ trigger.caption }}</button></p><br />
+<p><button class="button is-outlined is-fullwidth" onclick="fire(this, {{ trigger.id }}, {% if trigger.password | length %}true{% else %}false{% endif %})">{{ trigger.caption }}</button></p><br />
 {% endfor %}
 <script>
-function fire(id, password) {
+function fire(obj, id, password) {
     if (password) {
         var trigger_pw = prompt("Password");
     }
@@ -14,6 +14,7 @@ function fire(id, password) {
         var trigger_pw = "";
     }
 
+    obj.classList.add("is-loading");
     fetch("{{ url_for('triggers_fire', triggerid=0) }}".replace("0", id), {
         method: 'post',
         headers: {
@@ -24,12 +25,14 @@ function fire(id, password) {
     .then(
         function(response) {
             if (response.status !== 200) {
+                obj.classList.remove("is-loading");
                 if (response.status === 401) {
                     alert("Incorrect password.")
                 }
                 return;
             }
             response.json().then(function(data) {
+                obj.classList.remove("is-loading");
                 if (data.status == "success") {
                     alert("Success");
                 }
@@ -41,6 +44,7 @@ function fire(id, password) {
     )
     .catch(function(err) {
         console.log("Fetch Error :-S", err);
+        obj.classList.remove("is-loading");
     });
 }
 </script>

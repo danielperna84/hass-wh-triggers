@@ -7,7 +7,7 @@
 <table class="table is-bordered">
     <thead>
         <tr>
-            <th>ID</th><th>Username</th><th>Logins</th><th>Last login</th><th>Failed logins</th><th>Last failed</th><th>TOTP</th><th>OTP only</th><th>Admin</th><th></th>
+            <th>ID</th><th>Username</th><th>Logins</th><th>Last login</th><th>Failed logins</th><th>Last failed</th><th>TOTP</th><th>TOTP initialized</th><th>OTP only</th><th>Admin</th><th></th>
         </tr>
     </thead>
     <tbody>
@@ -19,6 +19,7 @@
             <td>{{ user.last_login | ctime }}</td>
             <td>{{ user.failed_logins }}</td>
             <td>{% if user.last_failed %}{{ user.last_failed | ctime }}{% endif %}</td>
+            <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_totp(this)" {% if user.totp_enabled %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td>{% if user.totp_secret %}<button id="del_totp" type="button" class="button is-danger" onclick="del_totp('{{ user.username }}')">Delete</button>{% endif %}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_otp(this)" {% if user.otp_only %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_admin(this)" {% if user.is_admin %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
@@ -72,6 +73,25 @@ function toggle_admin(obj) {
 function toggle_otp(obj) {
     var userid = obj.getAttribute("data-userid");
     fetch('users/toggle_otp/' + userid)
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                alert("Could not change setting");
+                return;
+            }
+            response.json().then(function(data) {
+                obj.checked = data.success;
+            });
+        }
+    )
+    .catch(function(err) {
+        console.log("Fetch Error :-S", err);
+    });
+}
+
+function toggle_totp(obj) {
+    var userid = obj.getAttribute("data-userid");
+    fetch('users/toggle_totp/' + userid)
     .then(
         function(response) {
             if (response.status !== 200) {

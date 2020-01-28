@@ -303,6 +303,7 @@ def register():
         otp_only=otp_only,
         password_hash=password_hash,
         sign_count=0,
+        totp_enabled=TOTP,
         last_login=int(time.time()),
         icon_url=SITE_URL)
     db.session.add(user)
@@ -457,7 +458,7 @@ def zfa():
 
     return render_template('2fa.html', authenticators=authenticators,
                            totp_secret=totp_secret, totp_uri=totp_uri,
-                           totp_enabled=totp_enabled)
+                           totp_enabled=totp_enabled, user=user)
 
 @app.route('/tokens', methods=['GET'])
 @login_required
@@ -619,6 +620,18 @@ def users_toggle_otp(userid):
     db.session.add(user)
     db.session.commit()
     return make_response(jsonify({'success': user.otp_only}), 200)
+
+
+@app.route('/users/toggle_totp/<int:userid>')
+@login_required
+def users_toggle_totp(userid):
+    if not current_user.is_admin:
+        return make_response(jsonify({'fail': 'unauthorized'}), 401)
+    user = load_user(userid)
+    user.totp_enabled = not user.totp_enabled
+    db.session.add(user)
+    db.session.commit()
+    return make_response(jsonify({'success': user.totp_enabled}), 200)
 
 
 @app.route('/triggers')

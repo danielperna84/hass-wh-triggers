@@ -8,6 +8,7 @@
 <label for="session_timeout">Session timeout (minutes): </label><input id="session_timeout" name="session_timeout" type="number" class="input" autocomplete="off" placeholder="15" value="{{ session_timeout }}" required /><br />
 <label for="ban_limit">Ban limit: </label><input id="ban_limit" name="ban_limit" type="number" class="input" autocomplete="off" placeholder="3" value="{{ ban_limit }}" required /><br />
 <label for="ban_time">Ban time (seconds): </label><input id="ban_time" name="ban_time" type="number" class="input" autocomplete="off" placeholder="300" value="{{ ban_time }}" required /><br />
+<label for="totp">TOTP: </label><input id="totp" name="totp" type="checkbox" {{ totp }} /><br />
 <label for="ignore_ssl">Ignore SSL: </label><input id="ignore_ssl" name="ignore_ssl" type="checkbox" {{ ignore_ssl }} /><br />
 <button type="submit" class="button">Save</button>
 </form>

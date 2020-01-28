@@ -18,6 +18,8 @@ def main():
         db.session.add(ban_time)
         ignore_ssl = Setting(parameter="ignore_ssl", value="0")
         db.session.add(ignore_ssl)
+        totp = Setting(parameter="totp", value="1")
+        db.session.add(totp)
         db.session.commit()
 
 

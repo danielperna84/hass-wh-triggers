@@ -99,16 +99,18 @@ TITLE = 'HASS-WH-Triggers'
 SESSION_TIMEOUT = 15
 BANLIMIT = 3
 BANTIME = 60
+TOTP = True
 IGNORE_SSL = False
 SSL_DEFAULT = ssl._create_default_https_context
 SSL_UNVERIFIED = ssl._create_unverified_context
 
 def load_settings():
-    global TITLE, SESSION_TIMEOUT, BANLIMIT, BANTIME, IGNORE_SSL, ssl
+    global TITLE, SESSION_TIMEOUT, BANLIMIT, BANTIME, TOTP, IGNORE_SSL, ssl
     TITLE = Setting.query.filter_by(parameter='title').first().value
     SESSION_TIMEOUT = int(Setting.query.filter_by(parameter='session_timeout').first().value)
     BANLIMIT = int(Setting.query.filter_by(parameter='ban_limit').first().value)
     BANTIME = int(Setting.query.filter_by(parameter='ban_time').first().value)
+    TOTP = bool(int(Setting.query.filter_by(parameter='totp').first().value))
     IGNORE_SSL = bool(int(Setting.query.filter_by(parameter='ignore_ssl').first().value))
     if IGNORE_SSL:
         ssl._create_default_https_context = SSL_UNVERIFIED
@@ -208,6 +210,7 @@ def settings():
     session_timeout = Setting.query.filter_by(parameter='session_timeout').first()
     ban_limit = Setting.query.filter_by(parameter='ban_limit').first()
     ban_time = Setting.query.filter_by(parameter='ban_time').first()
+    totp = Setting.query.filter_by(parameter='totp').first()
     ignore_ssl = Setting.query.filter_by(parameter='ignore_ssl').first()
     if request.method == 'POST':
         title.value = request.values.get('title')
@@ -218,6 +221,8 @@ def settings():
         db.session.add(ban_limit)
         ban_time.value = request.values.get('ban_time')
         db.session.add(ban_time)
+        totp.value = '1' if request.values.get('totp') else '0'
+        db.session.add(totp)
         ignore_ssl.value = '1' if request.values.get('ignore_ssl') else '0'
         db.session.add(ignore_ssl)
         db.session.commit()
@@ -225,6 +230,7 @@ def settings():
     return render_template('settings.html', title=TITLE,
                            session_timeout=SESSION_TIMEOUT,
                            ban_limit=BANLIMIT, ban_time=BANTIME,
+                           totp='checked' if TOTP else '',
                            ignore_ssl='checked' if IGNORE_SSL else '')
 
 
@@ -372,25 +378,26 @@ def login_otp():
         print("No (T)OTP available")
         return make_response(jsonify({'status': 'error'}), 401)
 
-    if totp and user.totp_secret and not user.otp_only:
-        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
-                         salt=username.encode("utf-8"),
-                         iterations=100000, backend=default_backend())
-        key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY))
-        f = Fernet(key)
-        try:
-            if pyotp.totp.TOTP(f.decrypt(user.totp_secret)).verify(totp):
-                login_user(user)
-                user.sign_count = user.sign_count + 1
-                user.last_login = int(time.time())
-                user.totp_initialized = True
-                db.session.add(user)
-                db.session.commit()
-                unban(request.remote_addr)
-                return make_response(jsonify({'status': 'success'}), 200)
-        except InvalidToken:
-            print("Invalid TOTP. Server secret key may has changed")
-        print("Incorrect TOTP")
+    if TOTP and totp:
+        if user.totp_enabled and user.totp_secret and not user.otp_only:
+            kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
+                            salt=username.encode("utf-8"),
+                            iterations=100000, backend=default_backend())
+            key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY))
+            f = Fernet(key)
+            try:
+                if pyotp.totp.TOTP(f.decrypt(user.totp_secret)).verify(totp):
+                    login_user(user)
+                    user.sign_count = user.sign_count + 1
+                    user.last_login = int(time.time())
+                    user.totp_initialized = True
+                    db.session.add(user)
+                    db.session.commit()
+                    unban(request.remote_addr)
+                    return make_response(jsonify({'status': 'success'}), 200)
+            except InvalidToken:
+                print("Invalid TOTP. Server secret key may has changed")
+            print("Incorrect TOTP")
 
     if otp and otps:
         now = int(time.time())
@@ -414,6 +421,7 @@ def login_otp():
 @app.route('/zfa', methods=['GET'])
 @login_required
 def zfa():
+    totp_enabled = bool(int(Setting.query.filter_by(parameter='totp').first().value))
     del_authenticator = request.args.get('del_authenticator')
     if del_authenticator:
         if current_user.is_admin:
@@ -448,7 +456,8 @@ def zfa():
             totp_uri = ""
 
     return render_template('2fa.html', authenticators=authenticators,
-                           totp_secret=totp_secret, totp_uri=totp_uri)
+                           totp_secret=totp_secret, totp_uri=totp_uri,
+                           totp_enabled=totp_enabled)
 
 @app.route('/tokens', methods=['GET'])
 @login_required

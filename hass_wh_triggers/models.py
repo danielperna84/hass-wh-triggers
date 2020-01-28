@@ -17,6 +17,7 @@ class User(db.Model, UserMixin):
     last_failed = db.Column(db.Integer, default=0)
     icon_url = db.Column(db.String(2083), nullable=False)
     totp_secret = db.Column(db.LargeBinary, unique=False, nullable=True)
+    totp_enabled = db.Column(db.Boolean, default=True, nullable=False)
     totp_initialized = db.Column(db.Boolean, default=False, nullable=False)
     otp_only = db.Column(db.Boolean, default=False, nullable=False)
 
@@ -58,7 +59,7 @@ class Authenticator(db.Model):
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     parameter = db.Column(db.String(32), unique=True, nullable=False)
-    value = db.Column(db.String(128), unique=True, nullable=False)
+    value = db.Column(db.String(128), unique=False, nullable=False)
 
     def __repr__(self):
         return '<Setting %r %r>' % (self.parameter, self.value)

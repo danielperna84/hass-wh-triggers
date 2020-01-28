@@ -3,7 +3,7 @@
 {% block content %}
 {% if current_user.is_authenticated and current_user.is_admin %}
 <h4 class="title is-4">Triggers</h4>
-<table class="table">
+<table class="table is-bordered">
         {% for trigger in triggers %}
         <tr><td>{{ trigger.caption }}&nbsp;</td><td><button class="button is-warning is-small" onclick="load_trigger({{ trigger.id }})">Edit</button></td><td><a class="button is-danger is-small" href="admin_triggers?del_trigger={{ trigger.id }}">Delete</a></td></tr>
         {% endfor %}

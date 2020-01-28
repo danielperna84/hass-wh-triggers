@@ -14,10 +14,10 @@
     {% for token in tokens %}
         <tr>
             <td>{{ usermap[token.user] }}</td>
-            <td><button class="button" onclick="document.getElementById('url_token').innerHTML = '{{ token.token }}&user={{ usermap[token.user] }}'">{{ token.token }}</button></td>
+            <td><button class="button is-small" onclick="document.getElementById('url_token').innerHTML = '{{ token.token }}&user={{ usermap[token.user] }}'">{{ token.token }}</button></td>
             <td>{{ token.created | ctime }}</td>
             <td>{{ (token.max_age / 60) | int }}</td>
-            <td><a href="{{ url_for('otp', del_token=token.id) }}" class="button is-danger">Delete</a></td>
+            <td><a href="{{ url_for('otp', del_token=token.id) }}" class="button is-danger is-small">Delete</a></td>
         </tr>
     {% endfor %}
     </tbody>
@@ -27,7 +27,7 @@
 <hr>
 <h6 class="title is-6">Add OTP token</h6>
 <label for="otp_user">User: </label>
-<div class="select">
+<div class="select is-small">
 <select id="otp_user">
     {% for user in users %}
     <option value="{{ user.id }}">{{ user.username }}</option>

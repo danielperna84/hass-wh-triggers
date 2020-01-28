@@ -20,10 +20,10 @@
             <td>{{ user.failed_logins }}</td>
             <td>{% if user.last_failed %}{{ user.last_failed | ctime }}{% endif %}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_totp(this)" {% if user.totp_enabled %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
-            <td>{% if user.totp_secret %}<button id="del_totp" type="button" class="button is-danger" onclick="del_totp('{{ user.username }}')">Delete</button>{% endif %}</td>
+            <td>{% if user.totp_secret %}<button id="del_totp" type="button" class="button is-danger is-small" onclick="del_totp('{{ user.username }}')">Delete</button>{% endif %}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_otp(this)" {% if user.otp_only %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_admin(this)" {% if user.is_admin %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
-            <td><a href="{{ url_for('users', del_user=user.id) }}" class="button is-danger">Delete</a></td>
+            <td><a href="{{ url_for('users', del_user=user.id) }}" class="button is-danger is-small">Delete</a></td>
         </tr>
     {% endfor %}
     </tbody>
@@ -44,7 +44,7 @@
                 <td>{{ authenticator.id }}</td>
                 <td>{{ authenticator.name }}</td>
                 <td>{{ usermap[authenticator.user] }}</td>
-                <td><a href="{{ url_for('zfa', del_authenticator=authenticator.id) }}" class="button is-danger">Delete</a></td>
+                <td><a href="{{ url_for('zfa', del_authenticator=authenticator.id) }}" class="button is-danger is-small">Delete</a></td>
             </tr>
         {% endfor %}
         </tbody>

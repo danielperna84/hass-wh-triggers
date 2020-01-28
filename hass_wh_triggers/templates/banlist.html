@@ -17,7 +17,7 @@
             <td>{{ banned.ip }}</td>
             <td>{{ banned.last_attempt | ctime }}</td>
             <td>{{ banned.failed_attempts }}</td>
-            <td><a href="{{ url_for('banlist', del_banned=banned.id) }}" class="button is-danger">Delete</a></td>
+            <td><a href="{{ url_for('banlist', del_banned=banned.id) }}" class="button is-danger is-small">Delete</a></td>
         </tr>
     {% endfor %}
     </tbody>

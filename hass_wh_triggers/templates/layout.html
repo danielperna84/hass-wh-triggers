@@ -23,7 +23,7 @@
             </div>
             <div class="navbar-menu" id="navMenu">
                 <div class="navbar-start">
-                    {% if current_user.is_authenticated and current_user.sign_count > 0 %}<a class="navbar-item" href="{{ url_for('triggers') }}">Triggers</a>{% endif %}
+                    {% if current_user.is_authenticated and current_user.sign_count > 0 %}<a class="navbar-item" href="{{ url_for('triggers') }}">Triggers</a>{% elif current_user.is_authenticated %}<a class="navbar-item" href="{{ url_for('logout') }}">Re-login to see triggers</a>{% endif %}
                 </div>
               
                 <div class="navbar-end">

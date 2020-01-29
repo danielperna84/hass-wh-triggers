@@ -32,24 +32,65 @@ from flask_login import login_user
 from flask_login import logout_user
 from werkzeug.security import generate_password_hash
 
-import util
+from . import util
 
-from db import db
-from models import User, Trigger, RegToken, Banlist, Setting, Authenticator, OTPToken
+from .db import db
+from .models import User, Trigger, RegToken, Banlist, Setting, Authenticator, OTPToken
 
-from fido2.webauthn import PublicKeyCredentialRpEntity
-from fido2.client import ClientData
-from fido2.server import Fido2Server
-from fido2.ctap2 import AttestationObject, AuthenticatorData, AttestedCredentialData
-from fido2 import cbor
+from .fido2.webauthn import PublicKeyCredentialRpEntity
+from .fido2.client import ClientData
+from .fido2.server import Fido2Server
+from .fido2.ctap2 import AttestationObject, AuthenticatorData, AttestedCredentialData
+from .fido2 import cbor
 
 import pyotp
 
-RP_ID = os.environ.get('RPID') if os.environ.get('RPID') else 'localhost'
-ORIGIN = os.environ.get('ORIGIN') if os.environ.get('ORIGIN') else 'https://localhost:5000'
+app = Flask(__name__, instance_relative_config=True)
+app.config.from_object('hass_wh_triggers.config.Config')
+try:
+    app.config.from_pyfile('config.cfg', silent=False)
+except Exception as err:
+    print(err)
+db.init_app(app)
+with app.app_context():
+    db.create_all()
+    if not Setting.query.all():
+        title = Setting(parameter="title", value="HASS-WH-Triggers")
+        db.session.add(title)
+        session_timeout = Setting(parameter="session_timeout", value="15")
+        db.session.add(session_timeout)
+        ban_limit = Setting(parameter="ban_limit", value="3")
+        db.session.add(ban_limit)
+        ban_time = Setting(parameter="ban_time", value="300")
+        db.session.add(ban_time)
+        ignore_ssl = Setting(parameter="ignore_ssl", value="0")
+        db.session.add(ignore_ssl)
+        totp = Setting(parameter="totp", value="1")
+        db.session.add(totp)
+        db.session.commit()
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'index'
+
+RP_ID = app.config['RP_ID']
+ORIGIN = app.config['ORIGIN']
 
 RP = PublicKeyCredentialRpEntity(RP_ID, "HASS-WH-Triggers")
 server = Fido2Server(RP)
+
+if isinstance(app.secret_key, bytes):
+    ENCRYPTION_KEY = app.secret_key
+else:
+    ENCRYPTION_KEY = app.secret_key.encode("utf-8")
+SITE_URL = 'https://example.com'
+TITLE = 'HASS-WH-Triggers'
+SESSION_TIMEOUT = 15
+BANLIMIT = 3
+BANTIME = 60
+TOTP = True
+IGNORE_SSL = False
+SSL_DEFAULT = ssl._create_default_https_context
+SSL_UNVERIFIED = ssl._create_unverified_context
 
 class ReverseProxied(object):
     def __init__(self, app, script_name=None, scheme=None, server=None):
@@ -72,37 +113,6 @@ class ReverseProxied(object):
         if server:
             environ['HTTP_HOST'] = server
         return self.app(environ, start_response)
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(
-    os.path.join(os.path.dirname(os.path.abspath(__name__)), 'webauthn.db'))
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-if RP_ID != 'localhost':
-    app.config.update(
-        SERVER_NAME=ORIGIN.split('/')[-1],
-        SESSION_COOKIE_SECURE=True
-    )
-sk = os.environ.get('FLASK_SECRET_KEY')
-app.secret_key = sk if sk else os.urandom(40)
-db.init_app(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'index'
-
-if isinstance(app.secret_key, bytes):
-    ENCRYPTION_KEY = app.secret_key
-else:
-    ENCRYPTION_KEY = app.secret_key.encode("utf-8")
-SITE_URL = 'https://example.com'
-
-TITLE = 'HASS-WH-Triggers'
-SESSION_TIMEOUT = 15
-BANLIMIT = 3
-BANTIME = 60
-TOTP = True
-IGNORE_SSL = False
-SSL_DEFAULT = ssl._create_default_https_context
-SSL_UNVERIFIED = ssl._create_unverified_context
 
 def load_settings():
     global TITLE, SESSION_TIMEOUT, BANLIMIT, BANTIME, TOTP, IGNORE_SSL, ssl

@@ -11,15 +11,15 @@
 <hr>
 <h4 class="title is-4">Add / modify trigger</h4>
 <form id="add-trigger-form" name="admin_triggers" method="post">
-<label for="caption">Caption: </label><input id="caption" name="caption" type="text" class="input" maxlength="64" autocomplete="off" placeholder="My Automation" required /><br />
-<label for="order">Order: </label><input id="order" name="order" type="number" class="input" value="1" /><br />
-<label for="trigger_json">Trigger data:</label><textarea id="trigger_json" name="trigger_json" class="textarea" maxlength="512" autocomplete="off" required onkeyup="check_trigger_json(this)" placeholder='{"service":"light.turn_on", "entity_id": "light.kitchen"}'></textarea>
-<label for="webhook_uri">Webhook URI: </label><input id="webhook_uri" name="webhook_uri" type="text" class="input" value="" required placeholder="http://your-home-assistant:8123/api/webhook/some_hook_id" /><br />
-<label for="password">Password (optional): </label><input id="password" name="password" onclick="toggle_password()" type="password" class="input" maxlength="64" autocomplete="off" placeholder="Password" /><br />
-<label for="include_user">Include user: </label><input id="include_user" name="include_user" type="checkbox" checked /><br />
+<label for="caption">Caption: </label><input id="caption" name="caption" type="text" class="input" maxlength="64" autocomplete="off" placeholder="My Automation" required /><br /><br />
+<label for="order">Order: </label><input id="order" name="order" type="number" class="input" value="1" /><br /><br />
+<label for="trigger_json">Trigger data:</label><textarea id="trigger_json" name="trigger_json" class="textarea" maxlength="512" autocomplete="off" required onkeyup="check_trigger_json(this)" placeholder='{"service":"light.turn_on", "entity_id": "light.kitchen"}'></textarea><br />
+<label for="webhook_uri">Webhook URI: </label><input id="webhook_uri" name="webhook_uri" type="text" class="input" value="" required placeholder="http://your-home-assistant:8123/api/webhook/some_hook_id" /><br /><br />
+<label for="password">Password (optional): </label><input id="password" name="password" onclick="toggle_password()" type="password" class="input" maxlength="64" autocomplete="off" placeholder="Password" /><br /><br />
+<label for="include_user">Include user: </label><input id="include_user" name="include_user" type="checkbox" checked /><br /><br />
 <input type="hidden" id="id" name="id" value="" />
 <button type="submit" class="button">Save</button><button type="button" class="button" onclick="resetForm()">Reset</button>
-</form>
+</form><br />
 <script>
 function resetForm() {
     document.getElementById('add-trigger-form').reset();

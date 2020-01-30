@@ -37,6 +37,7 @@ setup(
         "setuptools-scm",
         "six",
         "SQLAlchemy",
+        "wheel",
         "WTForms",
     ],
     entry_points={

@@ -42,7 +42,6 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'init-db = hass_wh_triggers.create_db:main',
             'hass-wh-triggers = hass_wh_triggers.app:main',
         ],
     },

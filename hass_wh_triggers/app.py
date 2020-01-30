@@ -397,7 +397,7 @@ def login_otp():
             key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY))
             f = Fernet(key)
             try:
-                if pyotp.totp.TOTP(f.decrypt(user.totp_secret)).verify(totp):
+                if pyotp.totp.TOTP(f.decrypt(user.totp_secret)).verify(totp, valid_window=1):
                     login_user(user)
                     user.sign_count = user.sign_count + 1
                     user.last_login = int(time.time())

@@ -34,6 +34,15 @@ Because of the nature of webhook triggers your Home Assistant installation has t
 
 Head over to the [wiki](https://github.com/danielperna84/hass-wh-triggers/wiki) for information on how to operate this tool.
 
+## Screenshots
+
+#### Login view (mobile)
+![Login](https://raw.githubusercontent.com/danielperna84/hass-wh-triggers/master/screenshots/login-mobile.PNG)
+#### Triggers (mobile)
+![Triggers](https://raw.githubusercontent.com/danielperna84/hass-wh-triggers/master/screenshots/triggers-mobile.PNG)
+#### Trigger configuration (desktop)
+![Trigger configuration](https://raw.githubusercontent.com/danielperna84/hass-wh-triggers/master/screenshots/conf-triggers-desktop.png)
+
 ## Installation (manual, for testing)
 
 ```bash

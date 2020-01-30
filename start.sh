@@ -2,4 +2,5 @@
 
 export FLASK_APP=wsgi.py
 export FLASK_DEBUG=1
-flask run --cert=adhoc
+flask run --cert=adhoc --host=0.0.0.0 --port=8443
+# flask run --cert=/etc/ssl/certs/yourcert.pem --key=/etc/ssl/private/yourkey.pem --host=0.0.0.0 --port=8443

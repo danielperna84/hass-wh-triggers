@@ -1,0 +1,14 @@
+# Example Systemd unit for CentOS 7 using gunicorn in a venv
+[Unit]
+Description=HASS-WH-Triggers
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Environment=APP_CONFIG_FILE=/var/www/hass-wh-triggers/config.cfg
+ExecStart=/var/www/hass-wh-triggers/venv/bin/gunicorn -w 4 --bind 0.0.0.0:8443 hass_wh_triggers.app:app --certfile=/etc/pki/tls/certs/mycert.pem --keyfile=/etc/pki/tls/private/mykey.key
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

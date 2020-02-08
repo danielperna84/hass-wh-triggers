@@ -40,11 +40,6 @@ setup(
         "wheel",
         "WTForms",
     ],
-    entry_points={
-        'console_scripts': [
-            'hass-wh-triggers = hass_wh_triggers.app:main',
-        ],
-    },
     include_package_data=True,
     data_files=[]
 )

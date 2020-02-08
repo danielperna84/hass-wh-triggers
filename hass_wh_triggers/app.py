@@ -63,6 +63,8 @@ with app.app_context():
         db.session.add(ban_limit)
         ban_time = Setting(parameter="ban_time", value="300")
         db.session.add(ban_time)
+        maxfido = Setting(parameter="maxfido", value="1")
+        db.session.add(maxfido)
         ignore_ssl = Setting(parameter="ignore_ssl", value="0")
         db.session.add(ignore_ssl)
         totp = Setting(parameter="totp", value="1")
@@ -87,6 +89,7 @@ TITLE = 'HASS-WH-Triggers'
 SESSION_TIMEOUT = 15
 BANLIMIT = 3
 BANTIME = 60
+MAXFIDO = 1
 TOTP = True
 IGNORE_SSL = False
 SSL_DEFAULT = ssl._create_default_https_context
@@ -115,11 +118,12 @@ class ReverseProxied(object):
         return self.app(environ, start_response)
 
 def load_settings():
-    global TITLE, SESSION_TIMEOUT, BANLIMIT, BANTIME, TOTP, IGNORE_SSL, ssl
+    global TITLE, SESSION_TIMEOUT, BANLIMIT, BANTIME, MAXFIDO, TOTP, IGNORE_SSL, ssl
     TITLE = Setting.query.filter_by(parameter='title').first().value
     SESSION_TIMEOUT = int(Setting.query.filter_by(parameter='session_timeout').first().value)
     BANLIMIT = int(Setting.query.filter_by(parameter='ban_limit').first().value)
     BANTIME = int(Setting.query.filter_by(parameter='ban_time').first().value)
+    MAXFIDO = int(Setting.query.filter_by(parameter='maxfido').first().value)
     TOTP = bool(int(Setting.query.filter_by(parameter='totp').first().value))
     IGNORE_SSL = bool(int(Setting.query.filter_by(parameter='ignore_ssl').first().value))
     if IGNORE_SSL:
@@ -220,6 +224,7 @@ def settings():
     session_timeout = Setting.query.filter_by(parameter='session_timeout').first()
     ban_limit = Setting.query.filter_by(parameter='ban_limit').first()
     ban_time = Setting.query.filter_by(parameter='ban_time').first()
+    maxfido = Setting.query.filter_by(parameter='maxfido').first()
     totp = Setting.query.filter_by(parameter='totp').first()
     ignore_ssl = Setting.query.filter_by(parameter='ignore_ssl').first()
     if request.method == 'POST':
@@ -231,6 +236,8 @@ def settings():
         db.session.add(ban_limit)
         ban_time.value = request.values.get('ban_time')
         db.session.add(ban_time)
+        maxfido.value = request.values.get('maxfido')
+        db.session.add(maxfido)
         totp.value = '1' if request.values.get('totp') else '0'
         db.session.add(totp)
         ignore_ssl.value = '1' if request.values.get('ignore_ssl') else '0'
@@ -239,7 +246,7 @@ def settings():
         load_settings()
     return render_template('settings.html', title=TITLE,
                            session_timeout=SESSION_TIMEOUT,
-                           ban_limit=BANLIMIT, ban_time=BANTIME,
+                           ban_limit=BANLIMIT, ban_time=BANTIME, maxfido=MAXFIDO,
                            totp='checked' if TOTP else '',
                            ignore_ssl='checked' if IGNORE_SSL else '')
 
@@ -468,7 +475,7 @@ def zfa():
 
     return render_template('2fa.html', authenticators=authenticators,
                            totp_secret=totp_secret, totp_uri=totp_uri,
-                           totp_enabled=totp_enabled, user=user)
+                           totp_enabled=totp_enabled, user=user, maxfido=MAXFIDO)
 
 @app.route('/tokens', methods=['GET'])
 @login_required
@@ -755,6 +762,11 @@ def admin_triggers():
 @app.route("/api/register/begin", methods=["POST"])
 @login_required
 def register_begin():
+    user = load_user(current_user.id)
+    authenticators = Authenticator.query.filter_by(user=user.id).all()
+    if len(authenticators) >= MAXFIDO:
+        print("No additional tokens allowed")
+        return make_response(jsonify({'fail': 'error'}), 401)
     authenticators = []
     registration_data, state = server.register_begin(
         {

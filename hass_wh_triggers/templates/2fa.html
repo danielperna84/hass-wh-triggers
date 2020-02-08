@@ -114,7 +114,7 @@
             <tr>
                 <td>{{ authenticator.id }}</td>
                 <td>{{ authenticator.name }}</td>
-                <td>{% if authenticators|length > 1 %}<a href="{{ url_for('zfa', del_authenticator=authenticator.id) }}" class="button is-danger">Delete</a>{% endif %}</td>
+                <td><a href="{{ url_for('zfa', del_authenticator=authenticator.id) }}" class="button is-danger is-small">Delete</a></td>
             </tr>
         {% endfor %}
         </tbody>
@@ -123,7 +123,7 @@
 <h6 class="title is-6">Add FIDO2 token</h6>
 <form id="register-form" name="register" method="POST">
     <input type="text" name="token_name" class="input" placeholder="My Token" autocomplete="off" required /><br />
-    <button id="register_fido2" type="button" class="button is-outlined is-fullwidth">Add FIDO2 token</button>
+    <button id="register_fido2" type="button" class="button is-outlined is-fullwidth"{% if authenticators|length >= maxfido %} disabled{% endif %}>Add FIDO2 token</button>
 </form>
 {% if totp_enabled and user.totp_enabled %}<hr>
 <h5 class="title is-5">TOTP token</h5>

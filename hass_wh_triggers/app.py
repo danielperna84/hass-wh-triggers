@@ -48,9 +48,9 @@ import pyotp
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_object('hass_wh_triggers.config.Config')
 try:
-    app.config.from_pyfile('config.cfg', silent=False)
-except Exception as err:
-    print(err)
+    app.config.from_envvar('APP_CONFIG_FILE')
+except:
+    print("Using default configuration")
 db.init_app(app)
 with app.app_context():
     db.create_all()

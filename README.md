@@ -43,23 +43,6 @@ Head over to the [wiki](https://github.com/danielperna84/hass-wh-triggers/wiki) 
 #### Trigger configuration (desktop)
 ![Trigger configuration](https://raw.githubusercontent.com/danielperna84/hass-wh-triggers/master/screenshots/conf-triggers-desktop.png)
 
-## Installation (manual, for testing)
-
-```bash
-git clone https://github.com/danielperna84/hass-wh-triggers.git
-cd hass-wh-triggers
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements
-mkdir instance
-cp config.cfg instance/
-# In instance/config.cfg set SECRET_KEY, RP_ID and ORIGIN, or leave it as it is to run on localhost.
-# In start.sh set FLASK_DEBUG to 0 if you want to disable debug-mode. You may also set a certificate, ip, port.
-bash start.sh
-```
-
-This uses the integrated server of Flask to serve the webapp. It should __NOT__ be used for production use. Head over to the [Flask documentation](https://flask.palletsprojects.com/en/1.1.x/deploying/) for more information on how to properly serve Flask apps.
-
 ## Disclaimer
 
 This app is in an early stage and should only be used with great caution. I am not responsible for any damage that might result out of using my work. Use at your own risk! I also have to mention, that this is my first Flask app. So I might be doing some pretty stupid stuff. Feel free to review my code and suggest improvements.

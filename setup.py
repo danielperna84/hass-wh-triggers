@@ -5,15 +5,11 @@ from io import open
 
 here = path.abspath(path.dirname(__file__))
 
-# Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
-
 setup(
     name='hass-wh-triggers',
     version='0.0.1',
     description='HASS-WH-Triggers',
-    long_description=long_description,
+    long_description='https://github.com/danielperna84/hass-wh-triggers',
     url='https://github.com/danielperna84/hass-wh-triggers',
     author='Daniel Perna',
     author_email='danielperna84@gmail.com',

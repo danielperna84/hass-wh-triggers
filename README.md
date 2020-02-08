@@ -32,7 +32,7 @@ Because of the nature of webhook triggers your Home Assistant installation has t
 
 ## Operation
 
-Head over to the [wiki](https://github.com/danielperna84/hass-wh-triggers/wiki) for information on how to operate this tool.
+Head over to the [wiki](https://github.com/danielperna84/hass-wh-triggers/wiki) for information on how to install and operate this tool.
 
 ## Screenshots
 

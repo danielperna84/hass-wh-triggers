@@ -1,6 +1,8 @@
 Version 0.0.2 (2020-)
 - Re-enabled autocomplete
 - Disabled auto-capitalize at registration form
+- Use proper logging
+- Reject requests where supplied hostname does not match ORIGIN
 
 Version 0.0.1 (2020-02-08)
 - Initial release

@@ -50,7 +50,7 @@ app.config.from_object('hass_wh_triggers.config.Config')
 try:
     app.config.from_envvar('APP_CONFIG_FILE')
 except:
-    print("Using default configuration")
+    app.logger.info("Using default configuration")
 db.init_app(app)
 with app.app_context():
     db.create_all()
@@ -145,13 +145,13 @@ def checkban(addr):
             banned.delete()
         elif banned.failed_attempts > BANLIMIT and time.time() - banned.last_attempt < BANTIME:
             banned.increment()
-            print("Denying access from:", addr)
+            app.logger.warning("Denying access from:", addr)
             return False
     return True
 
 
 def add_to_ban(addr):
-    print("Adding to banlist:", addr)
+    app.logger.warning("Adding to banlist:", addr)
     banned = Banlist.query.filter_by(ip=request.remote_addr).first()
     if not banned:
         banned = Banlist(
@@ -168,7 +168,7 @@ def add_to_ban(addr):
 def unban(addr):
     banned = Banlist.query.filter_by(ip=request.remote_addr).first()
     if banned:
-        print("Removing from banlist:", addr)
+        app.logger.warning("Removing from banlist:", addr)
         banned.delete()
 
 @login_manager.user_loader
@@ -182,6 +182,10 @@ def load_user(user_id):
 
 @app.before_request
 def before_request():
+    if ORIGIN not in request.host_url:
+        app.logger.warning('Incorrect hostname, rejecting request')
+        add_to_ban(request.remote_addr)
+        abort(401)
     session.permanent = True
     app.permanent_session_lifetime = datetime.timedelta(minutes=SESSION_TIMEOUT)
     session.modified = True
@@ -274,6 +278,7 @@ def register_prompt(reg_token):
         token = RegToken.query.filter_by(token=reg_token).first()
         if not token:
             add_to_ban(request.remote_addr)
+            abort(401)
     if current_user.is_authenticated:
         return redirect(url_for('triggers'))
     return render_template('register.html', reg_token=reg_token)
@@ -293,7 +298,7 @@ def register():
     if User.query.all():
         token = RegToken.query.filter_by(token=reg_token).first()
         if not token:
-            print("Invalid token")
+            app.logger.warning("Invalid token")
             add_to_ban(request.remote_addr)
             return make_response(jsonify({'status': 'error'}), 401)
         if token:
@@ -371,19 +376,19 @@ def login_otp():
 
     if not util.validate_username(username):
         add_to_ban(request.remote_addr)
-        print("Invalid username")
+        app.logger.warning("Invalid username")
         return make_response(jsonify({'status': 'error'}), 401)
 
     user = User.query.filter_by(username=username).first()
 
     if not user:
         add_to_ban(request.remote_addr)
-        print("User does not exist")
+        app.logger.warning("User does not exist")
         return make_response(jsonify({'status': 'error'}), 401)
     if not user.check_password(password):
         user.failed()
         add_to_ban(request.remote_addr)
-        print("Wrong password")
+        app.logger.warning("Wrong password")
         return make_response(jsonify({'status': 'error'}), 401)
 
     otps = []
@@ -393,7 +398,7 @@ def login_otp():
     if not user.totp_secret and not otps:
         user.failed()
         add_to_ban(request.remote_addr)
-        print("No (T)OTP available")
+        app.logger.warning("No (T)OTP available")
         return make_response(jsonify({'status': 'error'}), 401)
 
     if TOTP and totp:
@@ -414,8 +419,8 @@ def login_otp():
                     unban(request.remote_addr)
                     return make_response(jsonify({'status': 'success'}), 200)
             except InvalidToken:
-                print("Invalid TOTP. Server secret key may has changed")
-            print("Incorrect TOTP")
+                app.logger.warning("Invalid TOTP. Server secret key may has changed")
+            app.logger.warning("Incorrect TOTP")
 
     if otp and otps:
         now = int(time.time())
@@ -429,7 +434,7 @@ def login_otp():
                 db.session.commit()
                 unban(request.remote_addr)
                 return make_response(jsonify({'status': 'success'}), 200)
-        print("Invalid OTP")
+        app.logger.warning("Invalid OTP")
 
     user.failed()
     add_to_ban(request.remote_addr)
@@ -466,7 +471,7 @@ def zfa():
             totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
                 name=current_user.username, issuer_name=TITLE)
         except InvalidToken:
-            print("Invalid token. Server secret key may has changed.")
+            app.logger.warning("Invalid token. Server secret key may has changed.")
             totp_secret = "Invalid"
     if not totp_secret == "Invalid":
         if totp_secret is not None and user.totp_initialized:
@@ -688,17 +693,17 @@ def triggers_fire(triggerid):
     data = json.loads(trigger.trigger_json)
     if trigger.include_user:
         data['user'] = current_user.username
-    print("Trigger fired:", trigger.caption)
+    app.logger.warning("Trigger fired:", trigger.caption)
     req = urllib.request.Request(trigger.webhook_uri,
                                  headers=headers, method='POST',
                                  data=bytes(json.dumps(data).encode('utf-8')))
     try:
         with urllib.request.urlopen(req) as response:
             if response.code != 200:
-                print("Trigger failed:" % trigger.caption)
+                app.logger.warning("Trigger failed:" % trigger.caption)
                 return make_response(jsonify({"status": "failed", "trigger": trigger.id}), 200)
     except Exception as err:
-        print(err)
+        app.logger.warning(err)
         return make_response(jsonify({"status": "failed", "trigger": trigger.id}), 200)
     return make_response(jsonify({"status": "success", "trigger": trigger.id}), 200)
 
@@ -765,7 +770,7 @@ def register_begin():
     user = load_user(current_user.id)
     authenticators = Authenticator.query.filter_by(user=user.id).all()
     if len(authenticators) >= MAXFIDO:
-        print("No additional tokens allowed")
+        app.logger.warning("No additional tokens allowed")
         return make_response(jsonify({'fail': 'error'}), 401)
     authenticators = []
     registration_data, state = server.register_begin(
@@ -817,18 +822,18 @@ def authenticate_begin():
     password = request.form.get('login_password')
 
     if not util.validate_username(username):
-        print("Invalid username")
+        app.logger.warning("Invalid username")
         add_to_ban(request.remote_addr)
         return make_response(jsonify({'fail': 'error'}), 401)
 
     user = User.query.filter_by(username=username).first()
 
     if not user:
-        print("User does not exist")
+        app.logger.warning("User does not exist")
         add_to_ban(request.remote_addr)
         return make_response(jsonify({'fail': 'error'}), 401)
     if not user.check_password(password):
-        print("Incorrect password")
+        app.logger.warning("Incorrect password")
         user.failed()
         add_to_ban(request.remote_addr)
         return make_response(jsonify({'fail': 'error'}), 401)
@@ -837,7 +842,7 @@ def authenticate_begin():
     for authenticator in Authenticator.query.filter_by(user=user.id):
         authenticators.append(AttestedCredentialData(authenticator.credential))
     if not authenticators:
-        print("No authenticator enrolled")
+        app.logger.warning("No authenticator enrolled")
         return make_response(jsonify({'fail': 'error'}), 401)
     auth_data, state = server.authenticate_begin(authenticators)
     session["state"] = state

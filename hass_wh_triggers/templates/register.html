@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", e => {
 
 </script>
 <form id="register-form" name="register" method="POST" action="{{ url_for('register') }}">
-    <input type="text" name="register_username" class="input" placeholder="Username" autofocus required /><br />
+    <input type="text" name="register_username" class="input" placeholder="Username" autocomplete="off" autocapitalize="none" autofocus required /><br />
     <input type="password" id="register_password" name="register_password" class="input" placeholder="Password" required onkeyup="check_password()" /><br />
     <input type="password" id="repeat_password" name="repeat_password" class="input" placeholder="Repeat password" required onkeyup="check_password()" /><br /><br />
     <input name="register_reg_token" value="{{ reg_token }}" hidden />

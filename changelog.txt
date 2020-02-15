@@ -1,2 +1,6 @@
-Version 0.0.1 (202-02-08)
+Version 0.0.2 (2020-)
+- Re-enabled autocomplete
+- Disabled auto-capitalize at registration form
+
+Version 0.0.1 (2020-02-08)
 - Initial release

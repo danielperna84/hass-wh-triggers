@@ -201,6 +201,11 @@ def timectime(s):
     return time.ctime(s)
 
 
+@app.route('/manifest.json')
+def pwa_manifest():
+    return render_template('pwa-manifest.json')
+
+
 @app.route('/index')
 @app.route('/')
 def index():

@@ -7,7 +7,7 @@ here = path.abspath(path.dirname(__file__))
 
 setup(
     name='hass-wh-triggers',
-    version='0.0.1',
+    version='0.0.2',
     description='HASS-WH-Triggers',
     long_description='https://github.com/danielperna84/hass-wh-triggers',
     url='https://github.com/danielperna84/hass-wh-triggers',

@@ -1,4 +1,4 @@
-Version 0.0.2 (2020-)
+Version 0.0.2 (2020-02-16)
 - Re-enabled autocomplete
 - Disabled auto-capitalize at registration form
 - Use proper logging

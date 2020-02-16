@@ -3,6 +3,7 @@ Version 0.0.2 (2020-)
 - Disabled auto-capitalize at registration form
 - Use proper logging
 - Reject requests where supplied hostname does not match ORIGIN
+- Add progressive web app functionality
 
 Version 0.0.1 (2020-02-08)
 - Initial release

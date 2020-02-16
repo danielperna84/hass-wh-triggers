@@ -145,13 +145,13 @@ def checkban(addr):
             banned.delete()
         elif banned.failed_attempts > BANLIMIT and time.time() - banned.last_attempt < BANTIME:
             banned.increment()
-            app.logger.warning("Denying access from:", addr)
+            app.logger.warning("Denying access from: %s", addr)
             return False
     return True
 
 
 def add_to_ban(addr):
-    app.logger.warning("Adding to banlist:", addr)
+    app.logger.warning("Adding to banlist: %s", addr)
     banned = Banlist.query.filter_by(ip=request.remote_addr).first()
     if not banned:
         banned = Banlist(
@@ -168,7 +168,7 @@ def add_to_ban(addr):
 def unban(addr):
     banned = Banlist.query.filter_by(ip=request.remote_addr).first()
     if banned:
-        app.logger.warning("Removing from banlist:", addr)
+        app.logger.warning("Removing from banlist: %s", addr)
         banned.delete()
 
 @login_manager.user_loader
@@ -698,14 +698,14 @@ def triggers_fire(triggerid):
     data = json.loads(trigger.trigger_json)
     if trigger.include_user:
         data['user'] = current_user.username
-    app.logger.warning("Trigger fired:", trigger.caption)
+    app.logger.warning("Trigger fired by %s: %s", current_user.username, trigger.caption)
     req = urllib.request.Request(trigger.webhook_uri,
                                  headers=headers, method='POST',
                                  data=bytes(json.dumps(data).encode('utf-8')))
     try:
         with urllib.request.urlopen(req) as response:
             if response.code != 200:
-                app.logger.warning("Trigger failed:" % trigger.caption)
+                app.logger.warning("Trigger failed: %s", trigger.caption)
                 return make_response(jsonify({"status": "failed", "trigger": trigger.id}), 200)
     except Exception as err:
         app.logger.warning(err)

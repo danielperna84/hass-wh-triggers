@@ -80,6 +80,7 @@ ORIGIN = app.config['ORIGIN']
 RP = PublicKeyCredentialRpEntity(RP_ID, "HASS-WH-Triggers")
 server = Fido2Server(RP)
 
+VERSION = "0.0.2"
 if isinstance(app.secret_key, bytes):
     ENCRYPTION_KEY = app.secret_key
 else:
@@ -193,7 +194,7 @@ def before_request():
 
 @app.context_processor
 def inject_dict_for_all_templates():
-    return dict(app_title=TITLE, debug=app.debug)
+    return dict(app_title=TITLE, debug=app.debug, version=VERSION)
 
 
 @app.template_filter('ctime')

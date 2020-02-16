@@ -4,6 +4,7 @@ Version 0.0.2 (2020-)
 - Use proper logging
 - Reject requests where supplied hostname does not match ORIGIN
 - Add progressive web app functionality
+- Send HUP to Gunicorn master process on saving settings (if Gunicorn is detected) (Issue #19)
 
 Version 0.0.1 (2020-02-08)
 - Initial release

@@ -7,6 +7,7 @@ import time
 import json
 import random
 import base64
+import signal
 import datetime
 import urllib.request
 
@@ -95,6 +96,7 @@ TOTP = True
 IGNORE_SSL = False
 SSL_DEFAULT = ssl._create_default_https_context
 SSL_UNVERIFIED = ssl._create_unverified_context
+IS_GUNICORN = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
 
 class ReverseProxied(object):
     def __init__(self, app, script_name=None, scheme=None, server=None):
@@ -253,6 +255,9 @@ def settings():
         ignore_ssl.value = '1' if request.values.get('ignore_ssl') else '0'
         db.session.add(ignore_ssl)
         db.session.commit()
+        if IS_GUNICORN:
+            app.logger.warning("Sending HUP to %i", os.getppid())
+            os.kill(os.getppid(), signal.SIGHUP)
         load_settings()
     return render_template('settings.html', title=TITLE,
                            session_timeout=SESSION_TIMEOUT,

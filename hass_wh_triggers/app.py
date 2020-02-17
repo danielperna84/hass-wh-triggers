@@ -219,7 +219,7 @@ def index():
     users = User.query.all()
     if not users:
         return redirect(url_for('register_prompt', reg_token="none"))
-    return render_template('index.html')
+    return render_template('index.html', totp=TOTP)
 
 
 @app.route('/about')

@@ -1,6 +1,7 @@
-Version 0.0.3 ()
+Version 0.0.3 (2020-02-)
 - Hide TOTP input on loginsite if TOTP is globally disabled (Issue #21)
 - Fix progressive web app functionality
+- Allow assigning triggers to users (Issue #13)
 
 Version 0.0.2 (2020-02-16)
 - Re-enabled autocomplete

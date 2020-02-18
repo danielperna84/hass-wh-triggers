@@ -186,7 +186,7 @@ def load_user(user_id):
 @app.before_request
 def before_request():
     if ORIGIN not in request.host_url:
-        app.logger.warning('Incorrect hostname, rejecting request')
+        app.logger.warning('Incorrect hostname (%s), rejecting request', request.host_url)
         add_to_ban(request.remote_addr)
         abort(401)
     session.permanent = True

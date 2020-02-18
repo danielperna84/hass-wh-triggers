@@ -620,6 +620,8 @@ def users():
             for authenticator in Authenticator.query.filter_by(user=user.id):
                 authenticator.delete()
             user.delete()
+            TriggerUserMap.query.filter_by(user=user.id).delete()
+            db.session.commit()
         return redirect(url_for('users'))
     users = User.query.all()
     usermap = {}
@@ -734,6 +736,8 @@ def admin_triggers():
             trigger = Trigger.query.filter_by(id=del_trigger).first()
             if trigger:
                 trigger.delete()
+                TriggerUserMap.query.filter_by(trigger=del_trigger).delete()
+                db.session.commit()
             return redirect(url_for('admin_triggers'))
     elif request.method == 'POST':
         trigger_id = request.values.get('id')

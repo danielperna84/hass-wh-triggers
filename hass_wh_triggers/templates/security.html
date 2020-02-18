@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}2-Factor configuration{% endblock %}
+{% block title %}Security{% endblock %}
 {% block content %}
 <script>
     document.addEventListener("DOMContentLoaded", e => {
@@ -99,7 +99,40 @@
             document.getElementById('del_totp').classList.remove("is-loading");
         });
     }
+
+    function check_password() {
+        var p = document.getElementById("password").value;
+        var r = document.getElementById("password_repeat").value;
+        if (p == r && p.length > 0) {
+            document.getElementById("submit_pw").disabled = false;
+        }
+        else {
+            document.getElementById("submit_pw").disabled = true;
+        }
+    }
     </script>
+    </script>
+<h4 class="title is-4">Change password</h4>
+<form id="change-password-form" name="changepw" method="POST">
+    <div class="field">
+        <label for="current_password">Current password:</label>
+        <div class="control"><input id="current_password" name="current_password" type="password" class="input" maxlength="64" autocomplete="off" placeholder="Password" required /></div>
+    </div>
+    <div class="field">
+        <label for="password">New password:</label>
+        <div class="control"><input id="password" name="password" type="password" class="input" maxlength="64" autocomplete="off" placeholder="Password" required onkeyup="check_password()" /></div>
+    </div>
+    <div class="field">
+        <label for="password_repeat">Repeat new password:</label>
+        <div class="control"><input id="password_repeat" name="password_repeat" type="password" class="input" maxlength="64" autocomplete="off" placeholder="Password" required onkeyup="check_password()" /></div>
+    </div>
+    <div class="field">
+        <div class="control">
+          <button class="button is-outlined is-fullwidth" id="submit_pw" disabled>Save</button>
+        </div>
+    </div>
+</form>
+<hr>
 <h4 class="title is-4">2-Factor configuration</h4>
 <h5 class="title is-5">FIDO2 tokens</h5>
 <div class="table__wrapper">
@@ -114,7 +147,7 @@
             <tr>
                 <td>{{ authenticator.id }}</td>
                 <td>{{ authenticator.name }}</td>
-                <td><a href="{{ url_for('zfa', del_authenticator=authenticator.id) }}" class="button is-danger is-small">Delete</a></td>
+                <td><a href="{{ url_for('security', del_authenticator=authenticator.id) }}" class="button is-danger is-small">Delete</a></td>
             </tr>
         {% endfor %}
         </tbody>

@@ -54,7 +54,7 @@
                         <a class="navbar-link">Admin</a>
                         <div class="navbar-dropdown">
                             <a class="navbar-item" href="{{ url_for('admin_triggers') }}">Triggers</a>
-                            <a class="navbar-item" href="{{ url_for('zfa') }}">2FA-Tokens</a>
+                            <a class="navbar-item" href="{{ url_for('security') }}">Security</a>
                             <a class="navbar-item" href="{{ url_for('users') }}">Users</a>
                             <a class="navbar-item" href="{{ url_for('otp') }}">OTP</a>
                             <a class="navbar-item" href="{{ url_for('tokens') }}">Registration tokens</a>
@@ -66,7 +66,7 @@
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">Settings</a>
                         <div class="navbar-dropdown">
-                            <a class="navbar-item" href="{{ url_for('zfa') }}">2FA-Tokens</a>
+                            <a class="navbar-item" href="{{ url_for('security') }}">Security</a>
                         </div>
                     </div>
                     {% endif %}

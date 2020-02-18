@@ -345,7 +345,7 @@ def register():
     if token:
         token.delete()
     login_user(user)
-    return redirect(url_for('zfa'))
+    return redirect(url_for('security'))
 
 
 ### This is only accessible when Flasks Debug mode is turned on!
@@ -373,7 +373,7 @@ def login_debug():
     db.session.add(user)
     db.session.commit()
     unban(request.remote_addr)
-    return redirect(url_for('zfa'))
+    return redirect(url_for('security'))
 
 
 @app.route("/login/otp", methods=["POST"])
@@ -452,9 +452,20 @@ def login_otp():
     return make_response(jsonify({'status': 'error'}), 401)
 
 
-@app.route('/zfa', methods=['GET'])
+@app.route('/security', methods=['GET', 'POST'])
 @login_required
-def zfa():
+def security():
+    user = User.query.filter_by(username=current_user.username).first()
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        if not user.check_password(current_password):
+            flash("Incorrect password.")
+            return redirect(url_for('security'))
+        user.password_hash = generate_password_hash(request.form.get('password'))
+        db.session.add(user)
+        db.session.commit()
+        flash("Password saved.")
+        return redirect(url_for('security'))
     totp_enabled = bool(int(Setting.query.filter_by(parameter='totp').first().value))
     del_authenticator = request.args.get('del_authenticator')
     if del_authenticator:
@@ -464,11 +475,10 @@ def zfa():
             authenticator = Authenticator.query.filter_by(id=del_authenticator).filter_by(user=current_user.id).first()
         if authenticator:
             authenticator.delete()
-        return redirect(url_for('zfa'))
+        return redirect(url_for('security'))
     authenticators = []
     for authenticator in Authenticator.query.filter_by(user=current_user.id):
         authenticators.append({'id': authenticator.id, 'name': authenticator.name, 'user': authenticator.user})
-    user = User.query.filter_by(username=current_user.username).first()
     kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
                      salt=user.username.encode("utf-8"),
                      iterations=100000, backend=default_backend())
@@ -489,7 +499,7 @@ def zfa():
             totp_secret = "Initialized"
             totp_uri = ""
 
-    return render_template('2fa.html', authenticators=authenticators,
+    return render_template('security.html', authenticators=authenticators,
                            totp_secret=totp_secret, totp_uri=totp_uri,
                            totp_enabled=totp_enabled, user=user, maxfido=MAXFIDO)
 

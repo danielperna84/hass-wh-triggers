@@ -36,7 +36,7 @@ from werkzeug.security import generate_password_hash
 from . import util
 
 from .db import db
-from .models import User, Trigger, RegToken, Banlist, Setting, Authenticator, OTPToken
+from .models import User, Trigger, RegToken, Banlist, Setting, Authenticator, OTPToken, TriggerUserMap
 
 from .fido2.webauthn import PublicKeyCredentialRpEntity
 from .fido2.client import ClientData
@@ -670,7 +670,9 @@ def users_toggle_totp(userid):
 @app.route('/triggers')
 @login_required
 def triggers():
+    available_triggers = [ x.trigger for x in TriggerUserMap.query.filter_by(user=current_user.id).all() ]
     triggers = Trigger.query.order_by(Trigger.order.asc()).all()
+    triggers = [ t for t in triggers if t.id in available_triggers ]
     return render_template('triggers.html', triggers=triggers)
 
 
@@ -686,7 +688,11 @@ def triggers_json(triggerid):
         "include_user": trigger.include_user,
         "webhook_uri": trigger.webhook_uri,
         "password": trigger.password,
+        "users": []
     }
+    usermap = TriggerUserMap.query.filter_by(trigger=triggerid).all()
+    for user in usermap:
+        trigger["users"].append(user.user)
     return make_response(jsonify(trigger), 200)
 
 
@@ -737,6 +743,7 @@ def admin_triggers():
         include_user = True if request.values.get('include_user') else False
         webhook_uri = request.values.get('webhook_uri')
         password = request.values.get('password')
+        users = request.form.getlist('users')
         trigger_json = json.dumps(trigger_json)
         if not trigger_id:
             trigger = Trigger(
@@ -749,30 +756,32 @@ def admin_triggers():
             )
             db.session.add(trigger)
             db.session.commit()
-        else:
-            if Trigger.query.get(int(trigger_id)):
-                trigger = Trigger.query.get(int(trigger_id))
-                trigger.caption = caption
-                trigger.order = order
-                trigger.trigger_json = trigger_json
-                trigger.include_user = include_user
-                trigger.webhook_uri = webhook_uri
-                trigger.password = password
-                db.session.add(trigger)
-                db.session.commit()
-            else:
-                trigger = Trigger(
-                    caption=caption,
-                    order=order,
-                    trigger_json=trigger_json,
-                    include_user=include_user,
-                    webhook_uri=webhook_uri,
-                    password=password
+            for user in users:
+                trigger_user = TriggerUserMap(
+                    trigger=int(trigger.id),
+                    user=int(user)
                 )
-                db.session.add(trigger)
-                db.session.commit()
+                db.session.add(trigger_user)
+        else:
+            trigger = Trigger.query.get(int(trigger_id))
+            trigger.caption = caption
+            trigger.order = order
+            trigger.trigger_json = trigger_json
+            trigger.include_user = include_user
+            trigger.webhook_uri = webhook_uri
+            trigger.password = password
+            db.session.add(trigger)
+            TriggerUserMap.query.filter_by(trigger=trigger.id).delete()
+            for user in users:
+                trigger_user = TriggerUserMap(
+                    trigger=int(trigger.id),
+                    user=int(user)
+                )
+                db.session.add(trigger_user)
+        db.session.commit()
     triggers = Trigger.query.all()
-    return render_template('admin_triggers.html', triggers=triggers)
+    users = User.query.all()
+    return render_template('admin_triggers.html', triggers=triggers, users=users)
 
 
 @app.route("/api/register/begin", methods=["POST"])

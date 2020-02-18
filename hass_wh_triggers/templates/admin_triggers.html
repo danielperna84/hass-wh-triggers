@@ -11,14 +11,51 @@
 <hr>
 <h4 class="title is-4">Add / modify trigger</h4>
 <form id="add-trigger-form" name="admin_triggers" method="post">
-<label for="caption">Caption: </label><input id="caption" name="caption" type="text" class="input" maxlength="64" autocomplete="off" placeholder="My Automation" required /><br /><br />
-<label for="order">Order: </label><input id="order" name="order" type="number" class="input" value="1" /><br /><br />
-<label for="trigger_json">Trigger data:</label><textarea id="trigger_json" name="trigger_json" class="textarea" maxlength="512" autocomplete="off" required onkeyup="check_trigger_json(this)" placeholder='{"service":"light.turn_on", "entity_id": "light.kitchen"}'></textarea><br />
-<label for="webhook_uri">Webhook URI: </label><input id="webhook_uri" name="webhook_uri" type="text" class="input" value="" required placeholder="http://your-home-assistant:8123/api/webhook/some_hook_id" /><br /><br />
-<label for="password">Password (optional): </label><input id="password" name="password" onclick="toggle_password()" type="password" class="input" maxlength="64" autocomplete="off" placeholder="Password" /><br /><br />
-<label for="include_user">Include user: </label><input id="include_user" name="include_user" type="checkbox" checked /><br /><br />
-<input type="hidden" id="id" name="id" value="" />
-<button type="submit" class="button">Save</button><button type="button" class="button" onclick="resetForm()">Reset</button>
+    <div class="field">
+        <label for="caption">Caption: </label>
+        <div class="control"><input id="caption" name="caption" type="text" class="input" maxlength="64" autocomplete="off" placeholder="My Automation" required /></div>
+    </div>
+    <div class="field">
+        <label for="order">Order: </label>
+        <div class="control"><input id="order" name="order" type="number" class="input" value="1" /></div>
+    </div>
+    <div class="field">
+        <label for="trigger_json">Trigger data:</label>
+        <div class="control"><textarea id="trigger_json" name="trigger_json" class="textarea" maxlength="512" autocomplete="off" required onkeyup="check_trigger_json(this)" placeholder='{"service":"light.turn_on", "entity_id": "light.kitchen"}'></textarea></div>
+    </div>
+    <div class="field">
+        <label for="webhook_uri">Webhook URI: </label>
+        <div class="control"><input id="webhook_uri" name="webhook_uri" type="text" class="input" value="" required placeholder="http://your-home-assistant:8123/api/webhook/some_hook_id" /></div>
+    </div>
+    <div class="field">
+        <label for="password">Password (optional): </label>
+        <div class="control"><input id="password" name="password" onclick="toggle_password()" type="password" class="input" maxlength="64" autocomplete="off" placeholder="Password" /></div>
+    </div>
+    <div class="field">
+        <label for="include_user">Include user: </label>
+        <div class="control"><input id="include_user" name="include_user" type="checkbox" checked /></div>
+    </div>
+    <div class="field">
+        <label for="users">Available to users: </label>
+        <div class="control">
+            <select id="users" name="users" multiple size="4">
+                {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <p class="help">Available to all if none are selected</p>
+    </div>
+    <hr>
+    <div class="field is-grouped">
+        <div class="control">
+            <button type="submit" class="button is-warning">Save</button>
+        </div>
+        <div class="control">
+            <button type="button" class="button is-warning" onclick="resetForm()">Reset</button>
+        </div>
+    </div>
+    <input type="hidden" id="id" name="id" value="" />
 </form><br />
 <script>
 function resetForm() {
@@ -56,6 +93,9 @@ function load_trigger(obj, id) {
                 return;
             }
             response.json().then(function(data) {
+                document.querySelectorAll("#users option").forEach(function(user) {
+                    user.selected=false;
+                });
                 document.getElementById("caption").value = data.caption;
                 document.getElementById("order").value = data.order;
                 document.getElementById("trigger_json").value = data.trigger_json;
@@ -63,6 +103,9 @@ function load_trigger(obj, id) {
                 document.getElementById("webhook_uri").value = data.webhook_uri;
                 document.getElementById("password").value = data.password;
                 document.getElementById("id").value = data.id;
+                for (var i = 0; i < data.users.length; i++) {
+                    document.querySelector("#users option[value='" + data.users[i] + "']").selected=true;
+                }
                 obj.classList.remove("is-loading");
             });
         }

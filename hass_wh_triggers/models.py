@@ -70,7 +70,7 @@ class TriggerUserMap(db.Model):
     user = db.Column(db.Integer, unique=False, default=0)
 
     def __repr__(self):
-        return '<TriggerUserMap %r %r %r>' % (self.trigger, self.user)
+        return '<TriggerUserMap %r %r %r>' % (self.id, self.trigger, self.user)
 
     def delete(self):
         db.session.delete(self)

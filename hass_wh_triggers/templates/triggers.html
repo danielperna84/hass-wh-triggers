@@ -15,7 +15,8 @@ function fire(obj, id, password) {
     }
 
     obj.classList.add("is-loading");
-    fetch("{{ url_for('triggers_fire', triggerid=0) }}".replace("0", id), {
+    var url = "{{ url_for('triggers_fire', triggerid=0) }}".replace(new RegExp('0' + '$'), id);
+    fetch(url, {
         method: 'post',
         headers: {
             "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"

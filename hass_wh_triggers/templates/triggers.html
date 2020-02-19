@@ -7,11 +7,12 @@
 {% endfor %}
 <script>
 function fire(obj, id, password) {
+    var body = "";
     if (password) {
-        var trigger_pw = prompt("Password");
+        body += prompt("Password");
     }
     else {
-        var trigger_pw = "";
+        body += "";
     }
 
     obj.classList.add("is-loading");
@@ -21,7 +22,7 @@ function fire(obj, id, password) {
         headers: {
             "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"
         },
-        body: 'password=' + trigger_pw
+        body: body
     })
     .then(
         function(response) {

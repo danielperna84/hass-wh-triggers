@@ -688,7 +688,7 @@ def users_toggle_totp(userid):
 @login_required
 def triggers():
     available_triggers = [ x.trigger for x in TriggerUserMap.query.filter_by(user=current_user.id).all() ]
-    triggers = Trigger.query.order_by(Trigger.order.asc()).all()
+    triggers = Trigger.query.filter_by(disabled=False).order_by(Trigger.order.asc()).all()
     triggers = [ t for t in triggers if t.id in available_triggers ]
     return render_template('triggers.html', triggers=triggers)
 
@@ -704,6 +704,7 @@ def triggers_json(triggerid):
         "trigger_json": trigger.trigger_json,
         "include_user": trigger.include_user,
         "require_geo": trigger.require_geo,
+        "disabled": trigger.disabled,
         "webhook_uri": trigger.webhook_uri,
         "password": trigger.password,
         "users": []
@@ -718,6 +719,8 @@ def triggers_json(triggerid):
 @login_required
 def triggers_fire(triggerid):
     trigger = Trigger.query.filter_by(id=triggerid).first()
+    if trigger.disabled:
+        return make_response(jsonify({"status": "error", "error": "trigger disabled"}), 401)
     postdata = request.get_json()
     password = postdata.get('password')
     if trigger.password and not password:
@@ -769,6 +772,7 @@ def admin_triggers():
         trigger_json = json.loads(request.values.get('trigger_json'))
         include_user = True if request.values.get('include_user') else False
         require_geo = True if request.values.get('require_geo') else False
+        disabled = True if request.values.get('disabled') else False
         webhook_uri = request.values.get('webhook_uri')
         password = request.values.get('password')
         users = request.form.getlist('users')
@@ -780,6 +784,7 @@ def admin_triggers():
                 trigger_json=trigger_json,
                 include_user=include_user,
                 require_geo=require_geo,
+                disabled=disabled,
                 webhook_uri=webhook_uri,
                 password=password
             )
@@ -798,6 +803,7 @@ def admin_triggers():
             trigger.trigger_json = trigger_json
             trigger.include_user = include_user
             trigger.require_geo = require_geo
+            trigger.disabled = disabled
             trigger.webhook_uri = webhook_uri
             trigger.password = password
             db.session.add(trigger)

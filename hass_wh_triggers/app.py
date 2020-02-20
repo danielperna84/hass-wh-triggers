@@ -684,7 +684,7 @@ def users_toggle_totp(userid):
 def triggers():
     available_triggers = [ x.trigger for x in TriggerUserMap.query.filter_by(user=current_user.id).all() ]
     triggers = Trigger.query.order_by(Trigger.order.asc()).all()
-    triggers = [ t for t in triggers if t.id in available_triggers or not TriggerUserMap.query.filter_by(trigger=t.id).all() ]
+    triggers = [ t for t in triggers if t.id in available_triggers ]
     return render_template('triggers.html', triggers=triggers)
 
 

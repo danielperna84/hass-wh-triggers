@@ -36,6 +36,10 @@
         <div class="control"><input id="include_user" name="include_user" type="checkbox" checked /></div>
     </div>
     <div class="field">
+        <label for="require_geo">Require Geolocation: </label>
+        <div class="control"><input id="require_geo" name="require_geo" type="checkbox" /></div>
+    </div>
+    <div class="field">
         <label for="users">Available to users: </label>
         <div class="control">
             <select id="users" name="users" multiple size="4">
@@ -100,6 +104,7 @@ function load_trigger(obj, id) {
                 document.getElementById("order").value = data.order;
                 document.getElementById("trigger_json").value = data.trigger_json;
                 document.getElementById("include_user").checked = data.include_user;
+                document.getElementById("require_geo").checked = data.require_geo;
                 document.getElementById("webhook_uri").value = data.webhook_uri;
                 document.getElementById("password").value = data.password;
                 document.getElementById("id").value = data.id;

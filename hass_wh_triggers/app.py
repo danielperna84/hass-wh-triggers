@@ -713,8 +713,11 @@ def triggers_json(triggerid):
 @login_required
 def triggers_fire(triggerid):
     trigger = Trigger.query.filter_by(id=triggerid).first()
-    password = request.values.get('password')
-    if password:
+    postdata = request.get_json()
+    password = postdata.get('password')
+    if trigger.password and not password:
+        return make_response(jsonify({"status": "error", "error": "missing password"}), 401)
+    if password and trigger.password:
         if password != trigger.password:
             return make_response(jsonify({"status": "error", "error": "invalid password"}), 401)
     headers = {
@@ -723,6 +726,10 @@ def triggers_fire(triggerid):
     data = json.loads(trigger.trigger_json)
     if trigger.include_user:
         data['user'] = current_user.username
+    if trigger.require_geo:
+        data['latitude'] = postdata.get('latitude')
+        data['longitude'] = postdata.get('longitude')
+        data['accuracy'] = postdata.get('accuracy')
     app.logger.warning("Trigger fired by %s: %s", current_user.username, trigger.caption)
     req = urllib.request.Request(trigger.webhook_uri,
                                  headers=headers, method='POST',

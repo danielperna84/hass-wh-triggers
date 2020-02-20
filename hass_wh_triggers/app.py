@@ -721,6 +721,9 @@ def triggers_fire(triggerid):
     trigger = Trigger.query.filter_by(id=triggerid).first()
     if trigger.disabled:
         return make_response(jsonify({"status": "error", "error": "trigger disabled"}), 401)
+    available_triggers = [ x.trigger for x in TriggerUserMap.query.filter_by(user=current_user.id).all() ]
+    if trigger.id not in available_triggers:
+        return make_response(jsonify({"status": "error", "error": "trigger not available to user"}), 401)
     postdata = request.get_json()
     password = postdata.get('password')
     if trigger.password and not password:

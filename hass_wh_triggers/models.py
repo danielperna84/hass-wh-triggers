@@ -84,6 +84,7 @@ class Trigger(db.Model):
     include_user = db.Column(db.Boolean, default=True, nullable=False)
     webhook_uri = db.Column(db.String(512), unique=False, nullable=False)
     password = db.Column(db.String(128), unique=False, nullable=False)
+    require_geo = db.Column(db.Boolean, default=False, nullable=False)
 
     def __repr__(self):
         return '<Trigger %r %r %r>' % (self.caption, self.order, self.include_user)

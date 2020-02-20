@@ -698,6 +698,7 @@ def triggers_json(triggerid):
         "order": trigger.order,
         "trigger_json": trigger.trigger_json,
         "include_user": trigger.include_user,
+        "require_geo": trigger.require_geo,
         "webhook_uri": trigger.webhook_uri,
         "password": trigger.password,
         "users": []
@@ -755,6 +756,7 @@ def admin_triggers():
         order = int(request.values.get('order'))
         trigger_json = json.loads(request.values.get('trigger_json'))
         include_user = True if request.values.get('include_user') else False
+        require_geo = True if request.values.get('require_geo') else False
         webhook_uri = request.values.get('webhook_uri')
         password = request.values.get('password')
         users = request.form.getlist('users')
@@ -765,6 +767,7 @@ def admin_triggers():
                 order=order,
                 trigger_json=trigger_json,
                 include_user=include_user,
+                require_geo=require_geo,
                 webhook_uri=webhook_uri,
                 password=password
             )
@@ -782,6 +785,7 @@ def admin_triggers():
             trigger.order = order
             trigger.trigger_json = trigger_json
             trigger.include_user = include_user
+            trigger.require_geo = require_geo
             trigger.webhook_uri = webhook_uri
             trigger.password = password
             db.session.add(trigger)

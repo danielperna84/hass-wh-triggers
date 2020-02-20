@@ -3,6 +3,8 @@ Version 0.0.3 (2020-02-)
 - Fix progressive web app functionality
 - Allow assigning triggers to users (Issue #13)
 - Allow users to change their password (Issue #22)
+- Add optional geolocation requirement for triggers (Issue #20)
+- Allow to purge the banlist
 
 Version 0.0.2 (2020-02-16)
 - Re-enabled autocomplete

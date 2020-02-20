@@ -1,3 +1,6 @@
+Version 0.0.4 (2020-20-21)
+- Ensure unassigned users can't fire triggers (Issue #24)
+
 Version 0.0.3 (2020-02-20)
 - Hide TOTP input on loginsite if TOTP is globally disabled (Issue #21)
 - Fix progressive web app functionality

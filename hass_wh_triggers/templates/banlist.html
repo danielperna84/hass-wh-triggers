@@ -22,6 +22,9 @@
     {% endfor %}
     </tbody>
 </table>
+<hr>
+<a href="{{ url_for('banlist', purge=1) }}" class="button is-danger is-small">Purge</a>
+<br />
 </div>
 {% endif %}
 {% endblock %}

@@ -277,6 +277,11 @@ def banlist():
         if banned:
             banned.delete()
         return redirect(url_for('banlist'))
+    purge = request.args.get('purge')
+    if purge:
+        for ip in Banlist.query.all():
+            ip.delete()
+        return redirect(url_for('banlist'))
     banlist = Banlist.query.all()
     return render_template('banlist.html', banlist=banlist)
 

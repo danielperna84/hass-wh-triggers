@@ -6,6 +6,7 @@
 <p><button class="button is-outlined is-fullwidth" onclick="{% if trigger.require_geo %}geo_{% endif %}fire(this, {{ trigger.id }}, {% if trigger.password | length %}true{% else %}false{% endif %}, null)">{{ trigger.caption }}{% if trigger.require_geo %}&nbsp;&#127760;{% endif %}</button></p><br />
 {% endfor %}
 <script>
+window.onfocus = function() {window.location.reload()};
 function geoError(error) {
   switch(error.code) {
     case error.PERMISSION_DENIED:

@@ -27,6 +27,7 @@
         <meta name="theme-color" content="#ffffff">
         <link rel="manifest" href="{{ url_for('pwa_manifest') }}">
         <script>
+            window.onfocus = function() {window.location.reload()};
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register("{{ url_for('static', filename='js/service-worker-pwa.js') }}");
             }

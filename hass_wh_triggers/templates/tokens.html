@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Registration tokens{% endblock %}
 {% block content %}
+{% include "modal.html" %}
 {% if current_user.is_authenticated %}
 <h4 class="title is-4">Registration tokens</h4>
 <div class="table-container">
@@ -58,7 +59,7 @@ function add_token() {
         }
     )
     .catch(function(err) {
-        console.log("Fetch Error :-S", err);
+        show_modal("Fetch Error", err);
     });
 }
 </script>

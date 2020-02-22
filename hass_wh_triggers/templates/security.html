@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Security{% endblock %}
 {% block content %}
+{% include "modal.html" %}
 <script>
     document.addEventListener("DOMContentLoaded", e => {
         document.querySelector('#register_fido2').addEventListener('click', register);
@@ -65,7 +66,7 @@
             }
         )
         .catch(function(err) {
-            console.log("Fetch Error :-S", err);
+            show_modal("Fetch Error", err);
             document.getElementById('gen_totp').classList.remove("is-loading");
         });
     }
@@ -95,7 +96,7 @@
             }
         )
         .catch(function(err) {
-            console.log("Fetch Error :-S", err);
+            show_modal("Fetch Error", err);
             document.getElementById('del_totp').classList.remove("is-loading");
         });
     }

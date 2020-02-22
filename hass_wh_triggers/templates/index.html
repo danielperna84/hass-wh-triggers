@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Login{% endblock %}
 {% block content %}
+{% include "modal.html" %}
 {% if current_user.is_authenticated %}
 <h1>Indexx</h1>
 {% else %}
@@ -27,7 +28,7 @@ function authenticate(e) {
             body: formData
         }).then(function(response) {
             if (! response.ok) {
-                alert("Login failed.");
+                show_modal("Error", "Login failed");
                 return;
             }
             else {
@@ -57,8 +58,8 @@ function authenticate(e) {
             })
         }).then(function(response) {
             var stat = response.ok ? 'successful' : 'unsuccessful';
-            //alert('Authentication ' + stat + ' More details in server log...');
         }, function(reason) {
+            // Can't use modal here because it does not interrupt
             alert(reason);
         }).then(function() {
             window.location = "{{ url_for('triggers') }}";

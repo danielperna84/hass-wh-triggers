@@ -1,0 +1,19 @@
+<div id="modal" class="modal">
+    <div class="modal-background" onclick="document.getElementById('modal').classList.remove('is-active')"></div>
+    <div class="modal-content">
+        <header class="modal-card-head">
+            <p id="modal-title" class="modal-card-title"></p>
+            <button id="modal-close" class="delete" aria-label="close" onclick="document.getElementById('modal').classList.remove('is-active')"></button>
+        </header>
+        <section class="modal-card-body" id="modal-message"></section>
+    </div>
+</div>
+
+<script>
+    function show_modal(title, message) {
+        document.getElementById("modal-title").innerHTML = title;
+        document.getElementById("modal-message").innerHTML = message;
+        document.getElementById('modal').classList.add('is-active');
+        document.getElementById('modal-close').focus();
+    }
+</script>

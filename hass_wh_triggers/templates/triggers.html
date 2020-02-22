@@ -1,25 +1,26 @@
 {% extends "layout.html" %}
 {% block title %}Triggers{% endblock %}
 {% block content %}
+{% include "modal.html" %}
 {% if current_user.is_authenticated %}
 {% for trigger in triggers %}
 <p><button class="button is-outlined is-fullwidth" onclick="{% if trigger.require_geo %}geo_{% endif %}fire(this, {{ trigger.id }}, {% if trigger.password | length %}true{% else %}false{% endif %}, null)">{{ trigger.caption }}{% if trigger.require_geo %}&nbsp;&#127760;{% endif %}</button></p><br />
 {% endfor %}
 <script>
-window.onfocus = function() {window.location.reload()};
+//window.onfocus = function() {window.location.reload()};
 function geoError(error) {
   switch(error.code) {
     case error.PERMISSION_DENIED:
-      alert("Your location is required to fire this trigger.");
+      show_modal("Error", "Your location is required to fire this trigger.");
       break;
     case error.POSITION_UNAVAILABLE:
-      alert("Location information is unavailable. Can not fire trigger.")
+      show_modal("Error", "Location information is unavailable. Can not fire trigger.");
       break;
     case error.TIMEOUT:
-      alert("The request to get user location timed out. Can not fire trigger.")
+      show_modal("Error", "The request to get user location timed out. Can not fire trigger.");
       break;
     case error.UNKNOWN_ERROR:
-      alert("An unknown error occurred. Can not fire trigger.");
+      show_modal("Error", "An unknown error occurred. Can not fire trigger.");
       break;
   }
 }
@@ -30,7 +31,7 @@ function geo_fire(obj, id, password, position) {
             fire(obj, id, password, position);
         }, geoError);
     } else {
-        alert("Your location is required to fire this trigger, but your browser does not support it.");
+        show_modal("Error", "Your location is required to fire this trigger, but your browser does not support it.")
     }
 }
 
@@ -47,7 +48,6 @@ function fire(obj, id, password, position) {
         body.longitude = position.coords.longitude.toFixed(6);
         body.accuracy = position.coords.accuracy;
     }
-    console.log(position);
     obj.classList.add("is-loading");
     var url = "{{ url_for('triggers_fire', triggerid=0) }}".replace(new RegExp('0' + '$'), id);
     fetch(url, {
@@ -62,23 +62,23 @@ function fire(obj, id, password, position) {
             if (response.status !== 200) {
                 obj.classList.remove("is-loading");
                 if (response.status === 401) {
-                    alert("Incorrect password.")
+                    show_modal("Error", "Incorrect password.");
                 }
                 return;
             }
             response.json().then(function(data) {
                 obj.classList.remove("is-loading");
                 if (data.status == "success") {
-                    alert("Success");
+                    show_modal("Success", "Trigger fired.");
                 }
                 else {
-                    alert("Error");
+                    show_modal("Error", "Could not fire trigger.");
                 }
             });
         }
     )
     .catch(function(err) {
-        console.log("Fetch Error :-S", err);
+        show_modal("Fetch Error", err)
         obj.classList.remove("is-loading");
     });
 }

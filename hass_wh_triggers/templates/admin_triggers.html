@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Triggers{% endblock %}
 {% block content %}
+{% include "modal.html" %}
 {% if current_user.is_authenticated and current_user.is_admin %}
 <h4 class="title is-4">Triggers</h4>
 <table class="table is-bordered">
@@ -96,7 +97,7 @@ function load_trigger(obj, id) {
     .then(
         function(response) {
             if (response.status !== 200) {
-                alert("Could not load trigger data");
+                show_modal("Error", "Could not load trigger data.");
                 obj.classList.remove("is-loading");
                 return;
             }
@@ -121,7 +122,7 @@ function load_trigger(obj, id) {
         }
     )
     .catch(function(err) {
-        console.log("Fetch Error :-S", err);
+        show_modal("Fetch Error", err);
         obj.classList.remove("is-loading");
     });
 }

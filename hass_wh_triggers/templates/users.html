@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}Users{% endblock %}
 {% block content %}
+{% include "modal.html" %}
 {% if current_user.is_authenticated %}
 <h5 class="title is-5">Users</h5>
 <div class="table-container">
@@ -85,7 +86,7 @@ function toggle_otp(obj) {
         }
     )
     .catch(function(err) {
-        console.log("Fetch Error :-S", err);
+        show_modal("Fetch Error", err);
     });
 }
 
@@ -104,7 +105,7 @@ function toggle_totp(obj) {
         }
     )
     .catch(function(err) {
-        console.log("Fetch Error :-S", err);
+        show_modal("Fetch Error", err);
     });
 }
 
@@ -124,13 +125,13 @@ function del_totp(username) {
                         window.location.reload();
                     }
                     else {
-                        alert("Error while deleting TOTP.");
+                        show_modal("Fetch Error", "Error while deleting TOTP.");
                     }
                 });
             }
         )
         .catch(function(err) {
-            console.log("Fetch Error :-S", err);
+            show_modal("Fetch Error", err);
         });
     }
 </script>

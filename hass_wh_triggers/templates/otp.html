@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block title %}OTP tokens{% endblock %}
 {% block content %}
+{% include "modal.html" %}
 {% if current_user.is_authenticated %}
 <h4 class="title is-4">OTP tokens</h4>
 <div class="table-container">
@@ -49,7 +50,7 @@ function add_token() {
     .then(
         function(response) {
             if (response.status !== 200) {
-                console.log("Could not add token");
+                show_modal("Error", "Could not add token.");
                 return;
             }
             response.json().then(function(data) {
@@ -58,7 +59,7 @@ function add_token() {
         }
     )
     .catch(function(err) {
-        console.log("Fetch Error :-S", err);
+        show_modal("Fetch Error", err);
     });
 }
 </script>

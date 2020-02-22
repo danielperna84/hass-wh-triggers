@@ -12,21 +12,26 @@
 <hr>
 <h4 class="title is-4">Add / modify trigger</h4>
 <form id="add-trigger-form" name="admin_triggers" method="post">
-    <div class="field">
-        <label for="caption">Caption: </label>
-        <div class="control"><input id="caption" name="caption" type="text" class="input" maxlength="64" autocomplete="off" placeholder="My Automation" required /></div>
-    </div>
-    <div class="field">
-        <label for="order">Order: </label>
-        <div class="control"><input id="order" name="order" type="number" class="input" value="1" /></div>
+    <div class="field is-horizontal">
+        <div class="field-body">
+            <div class="field is-expanded">
+                <label for="caption">Caption: </label>
+                <div class="control"><input id="caption" name="caption" type="text" class="input" maxlength="64" autocomplete="off" placeholder="My Automation" required /></div>
+            </div>
+            <div class="field is-narrow">
+                <label for="order">Order: </label>
+                <div class="control"><input id="order" name="order" type="number" class="input is-narrow" value="1" /></div>
+            </div>
+        </div>
     </div>
     <div class="field">
         <label for="trigger_json">Trigger data:</label>
         <div class="control"><textarea id="trigger_json" name="trigger_json" class="textarea" maxlength="512" autocomplete="off" required onkeyup="check_trigger_json(this)" placeholder='{"service":"light.turn_on", "entity_id": "light.kitchen"}'></textarea></div>
     </div>
-    <div class="field">
-        <label for="webhook_uri">Webhook URI: </label>
-        <div class="control"><input id="webhook_uri" name="webhook_uri" type="text" class="input" value="" required placeholder="http://your-home-assistant:8123/api/webhook/some_hook_id" /></div>
+    <label for="webhook_uri">Webhook URI: </label>
+    <div class="field has-addons">
+        <div class="control is-expanded"><input id="webhook_uri" name="webhook_uri" type="text" class="input" value="" required placeholder="http://your-home-assistant:8123/api/webhook/some_hook_id" /></div>
+        <div class="control"><button type="button" class="button is-primary is-outlined" onclick="make_id(16)">Add random ID</button></div>
     </div>
     <div class="field">
         <label for="password">Password (optional): </label>
@@ -53,7 +58,6 @@
                 {% endfor %}
             </select>
         </div>
-        <p class="help">Available to all if none are selected</p>
     </div>
     <hr>
     <div class="field is-grouped">
@@ -125,6 +129,16 @@ function load_trigger(obj, id) {
         show_modal("Fetch Error", err);
         obj.classList.remove("is-loading");
     });
+}
+
+function make_id(length) {
+    var result = '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    document.getElementById('webhook_uri').value += result;
 }
 </script>
 {% endif %}

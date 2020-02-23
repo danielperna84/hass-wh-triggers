@@ -6,11 +6,11 @@
 <h4 class="title is-4">Triggers</h4>
 <table class="table is-bordered">
         {% for trigger in triggers %}
-        <tr><td>{{ trigger.caption }}&nbsp;</td><td><button class="button is-warning is-small" onclick="load_trigger(this, {{ trigger.id }})">Edit</button></td><td><a class="button is-danger is-small" href="admin_triggers?del_trigger={{ trigger.id }}">Delete</a></td></tr>
+        <tr><td>{{ trigger.caption }}&nbsp;</td><td><button class="button is-warning is-small is-outlined" onclick="load_trigger(this, {{ trigger.id }}, false)">Edit</button></td><td><button class="button is-primary is-small is-outlined" onclick="load_trigger(this, {{ trigger.id }}, true)">Show JSON</button></td><td><a class="button is-danger is-small is-outlined" href="admin_triggers?del_trigger={{ trigger.id }}">Delete</a></td></tr>
         {% endfor %}
 </table>
 <hr>
-<h4 class="title is-4">Add / modify trigger</h4>
+<h4 class="title is-4">Add / modify trigger or <button class="button is-primary is-outlined is-small" onclick="document.getElementById('modal_json_import').classList.add('is-active')">Import from JSON</button></h4>
 <form id="add-trigger-form" name="admin_triggers" method="post">
     <div class="field is-horizontal">
         <div class="field-body">
@@ -70,6 +70,25 @@
     </div>
     <input type="hidden" id="id" name="id" value="" />
 </form><br />
+<div id="modal_json_import" class="modal">
+    <div class="modal-background" onclick="document.getElementById('modal_json_import').classList.remove('is-active')"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Import trigger from JSON</p>
+        <button class="delete" aria-label="close" onclick="document.getElementById('modal_json_import').classList.remove('is-active')"></button>
+      </header>
+      <section class="modal-card-body">
+        <p>Paste a triggers JSON data here. Click <i>Fill form</i> to fill the trigger-form with the imported data.<br />
+        The internal ID of the imported trigger and user assignments will <b>NOT</b> be imported!<br />
+        Click the <i>Save</i> button below the form to store the imported trigger into the database as a <b>new</b> trigger.</p>
+        <textarea id="json_data" class="textarea"></textarea>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success" onclick="import_json()">Fill form</button>
+        <button class="button" onclick="document.getElementById('modal_json_import').classList.remove('is-active')">Cancel</button>
+      </footer>
+    </div>
+</div>
 <script>
 function resetForm() {
     document.getElementById('add-trigger-form').reset();
@@ -95,7 +114,7 @@ function toggle_password() {
     }
 }
 
-function load_trigger(obj, id) {
+function load_trigger(obj, id, modal=false) {
     obj.classList.add("is-loading");
     fetch("{{ url_for('triggers_json', triggerid=0) }}".replace("0", id))
     .then(
@@ -106,20 +125,27 @@ function load_trigger(obj, id) {
                 return;
             }
             response.json().then(function(data) {
-                document.querySelectorAll("#users option").forEach(function(user) {
-                    user.selected=false;
-                });
-                document.getElementById("caption").value = data.caption;
-                document.getElementById("order").value = data.order;
-                document.getElementById("trigger_json").value = data.trigger_json;
-                document.getElementById("include_user").checked = data.include_user;
-                document.getElementById("require_geo").checked = data.require_geo;
-                document.getElementById("disabled").checked = data.disabled;
-                document.getElementById("webhook_uri").value = data.webhook_uri;
-                document.getElementById("password").value = data.password;
-                document.getElementById("id").value = data.id;
-                for (var i = 0; i < data.users.length; i++) {
-                    document.querySelector("#users option[value='" + data.users[i] + "']").selected=true;
+                if (modal) {
+                    delete data['id'];
+                    delete data['users'];
+                    show_modal("Trigger as JSON", "<pre class='force-select'>" + JSON.stringify(data, null, 2) + "</pre>");
+                }
+                else {
+                    document.querySelectorAll("#users option").forEach(function(user) {
+                        user.selected=false;
+                    });
+                    document.getElementById("caption").value = data.caption;
+                    document.getElementById("order").value = data.order;
+                    document.getElementById("trigger_json").value = data.trigger_json;
+                    document.getElementById("include_user").checked = data.include_user;
+                    document.getElementById("require_geo").checked = data.require_geo;
+                    document.getElementById("disabled").checked = data.disabled;
+                    document.getElementById("webhook_uri").value = data.webhook_uri;
+                    document.getElementById("password").value = data.password;
+                    document.getElementById("id").value = data.id;
+                    for (var i = 0; i < data.users.length; i++) {
+                        document.querySelector("#users option[value='" + data.users[i] + "']").selected=true;
+                    }
                 }
                 obj.classList.remove("is-loading");
             });
@@ -129,6 +155,20 @@ function load_trigger(obj, id) {
         show_modal("Fetch Error", err);
         obj.classList.remove("is-loading");
     });
+}
+
+function import_json() {
+    data = JSON.parse(document.getElementById('json_data').value);
+    document.getElementById("caption").value = data.caption;
+    document.getElementById("order").value = data.order;
+    document.getElementById("trigger_json").value = data.trigger_json;
+    document.getElementById("include_user").checked = data.include_user;
+    document.getElementById("require_geo").checked = data.require_geo;
+    document.getElementById("disabled").checked = data.disabled;
+    document.getElementById("webhook_uri").value = data.webhook_uri;
+    document.getElementById("password").value = data.password;
+    document.getElementById("id").value = "";
+    document.getElementById('modal_json_import').classList.remove('is-active');
 }
 
 function make_id(length) {

@@ -8,7 +8,7 @@
 <table class="table is-bordered is-fullwidth is-hoverable">
     <thead>
         <tr>
-            <th>ID</th><th>Username</th><th>Logins</th><th>Last login</th><th>Failed logins</th><th>Last failed</th><th>TOTP</th><th>TOTP initialized</th><th>OTP only</th><th>Admin</th><th></th>
+            <th>ID</th><th>Username</th><th>Logins</th><th>Last login</th><th>Failed logins</th><th>Last failed</th><th>TOTP</th><th>TOTP initialized</th><th>OTP only</th><th>Admin</th><th></th><th></th>
         </tr>
     </thead>
     <tbody>
@@ -21,15 +21,17 @@
             <td>{{ user.failed_logins }}</td>
             <td>{% if user.last_failed %}{{ user.last_failed | ctime }}{% endif %}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_totp(this)" {% if user.totp_enabled %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
-            <td>{% if user.totp_secret %}<button id="del_totp" type="button" class="button is-danger is-small" onclick="del_totp('{{ user.username }}')">Delete</button>{% endif %}</td>
+            <td>{% if user.totp_secret %}<button id="del_totp" type="button" class="button is-danger is-small is-outlined" onclick="del_totp('{{ user.username }}')">Delete</button>{% endif %}</td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_otp(this)" {% if user.otp_only %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
             <td><input type="checkbox" data-userid="{{ user.id }}" onclick="toggle_admin(this)" {% if user.is_admin %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} /></td>
-            <td><a href="{{ url_for('users', del_user=user.id) }}" class="button is-danger is-small">Delete</a></td>
+            <td><button class="button is-primary is-small is-outlined" onclick="load_user(this, {{ user.id }})">Show JSON</button></td>
+            <td><a href="{{ url_for('users', del_user=user.id) }}" class="button is-danger is-small is-outlined">Delete</a></td>
         </tr>
     {% endfor %}
     </tbody>
 </table>
 </div>
+<button class="button is-primary is-small is-outlined" onclick="document.getElementById('modal_json_import').classList.add('is-active')">Import from JSON</button>
 <hr>
 <h5 class="title is-5">FIDO2 tokens</h5>
 <div class="table__wrapper">
@@ -45,13 +47,65 @@
                 <td>{{ authenticator.id }}</td>
                 <td>{{ authenticator.name }}</td>
                 <td>{{ usermap[authenticator.user] }}</td>
-                <td><a href="{{ url_for('security', del_authenticator=authenticator.id) }}" class="button is-danger is-small">Delete</a></td>
+                <td><a href="{{ url_for('security', del_authenticator=authenticator.id) }}" class="button is-danger is-small is-outlined">Delete</a></td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
+<div id="modal_json_import" class="modal">
+    <div class="modal-background" onclick="document.getElementById('modal_json_import').classList.remove('is-active')"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Import user from JSON</p>
+        <button class="delete" aria-label="close" onclick="document.getElementById('modal_json_import').classList.remove('is-active')"></button>
+      </header>
+      <section class="modal-card-body">
+        <p>Paste a users JSON data here. Click <i>Import</i> to import the user into the database.</p>
+        <textarea id="json_data" class="textarea"></textarea>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success" onclick="import_json()">Import</button>
+        <button class="button" onclick="document.getElementById('modal_json_import').classList.remove('is-active')">Cancel</button>
+      </footer>
+    </div>
+</div>
 <script>
+function import_json() {
+    document.getElementById('modal_json_import').classList.remove('is-active');
+    data = JSON.parse(document.getElementById('json_data').value);
+    var url = "{{ url_for('users_import') }}";
+    fetch(url, {
+        method: 'post',
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                if (response.status === 401) {
+                    show_modal("Error", response.statusText);
+                }
+                return;
+            }
+            response.json().then(function(res) {
+                if (res.status == "success") {
+                    window.location.reload();
+                }
+                else {
+                    show_modal("Error", "Could not import user.");
+                }
+            });
+        }
+    )
+    .catch(function(err) {
+        show_modal("Fetch Error", err)
+        obj.classList.remove("is-loading");
+    });
+}
+
 function toggle_admin(obj) {
     var userid = obj.getAttribute("data-userid");
     fetch('users/toggle_admin/' + userid)
@@ -110,30 +164,52 @@ function toggle_totp(obj) {
 }
 
 function del_totp(username) {
-        if (!confirm("Warning. This will delete the TOTP token for user " + username + "!")) {
-            return;
-        }
-        fetch('{{ url_for("totp_delete") }}/' + username, {})
-        .then(
-            function(response) {
-                if (response.status !== 200) {
-                    alert("Could not delete TOTP.");
-                    return;
-                }
-                response.json().then(function(data) {
-                    if (data.status == "success") {
-                        window.location.reload();
-                    }
-                    else {
-                        show_modal("Fetch Error", "Error while deleting TOTP.");
-                    }
-                });
-            }
-        )
-        .catch(function(err) {
-            show_modal("Fetch Error", err);
-        });
+    if (!confirm("Warning. This will delete the TOTP token for user " + username + "!")) {
+        return;
     }
+    fetch('{{ url_for("totp_delete") }}/' + username, {})
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                alert("Could not delete TOTP.");
+                return;
+            }
+            response.json().then(function(data) {
+                if (data.status == "success") {
+                    window.location.reload();
+                }
+                else {
+                    show_modal("Fetch Error", "Error while deleting TOTP.");
+                }
+            });
+        }
+    )
+    .catch(function(err) {
+        show_modal("Fetch Error", err);
+    });
+}
+
+function load_user(obj, id) {
+    obj.classList.add("is-loading");
+    fetch("{{ url_for('users_json', userid=0) }}".replace("0", id))
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                show_modal("Error", "Could not load user data.");
+                obj.classList.remove("is-loading");
+                return;
+            }
+            response.json().then(function(data) {
+                show_modal("User as JSON", "<pre class='force-select'>" + JSON.stringify(data, null, 2) + "</pre>");
+                obj.classList.remove("is-loading");
+            });
+        }
+    )
+    .catch(function(err) {
+        show_modal("Fetch Error", err);
+        obj.classList.remove("is-loading");
+    });
+}
 </script>
 {% endif %}
 {% endblock %}

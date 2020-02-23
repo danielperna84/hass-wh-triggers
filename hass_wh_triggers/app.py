@@ -353,6 +353,35 @@ def register():
     return redirect(url_for('security'))
 
 
+@app.route('/users/import', methods=['POST'])
+@login_required
+def users_import():
+    if not checkban(request.remote_addr):
+        abort(401)
+    if not current_user.is_admin:
+        redirect(url_for('triggers'))
+    data = request.get_json()
+    app.logger.debug(request.get_json())
+    user = User(
+        created=data['created'],
+        username=data['username'],
+        display_name=data['display_name'],
+        is_admin=data['is_admin'],
+        otp_only=data['otp_only'],
+        password_hash=data['password_hash'],
+        sign_count=data['sign_count'],
+        last_failed=data['last_failed'],
+        last_login=data['last_login'],
+        totp_enabled=data['totp_enabled'],
+        totp_initialized=data['totp_initialized'],
+        totp_secret=data['totp_secret'].encode('utf-8'),
+        icon_url=data['icon_url'])
+    db.session.add(user)
+    db.session.commit()
+
+    return make_response(jsonify({"status": "success"}), 200)
+
+
 ### This is only accessible when Flasks Debug mode is turned on!
 @app.route('/login/debug', methods=['POST'])
 def login_debug():
@@ -646,6 +675,29 @@ def users():
     for authenticator in Authenticator.query.all():
         authenticators.append({'id': authenticator.id, 'name': authenticator.name, 'user': authenticator.user})
     return render_template('users.html', users=users, usermap=usermap, authenticators=authenticators)
+
+
+@app.route('/users/<int:userid>')
+@login_required
+def users_json(userid):
+    user = User.query.filter_by(id=userid).first()
+    user = {
+        "username": user.username,
+        "display_name": user.display_name,
+        "created": user.created,
+        "password_hash": user.password_hash,
+        "is_admin": user.is_admin,
+        "sign_count": user.sign_count,
+        "failed_logins": user.failed_logins,
+        "last_login": user.last_login,
+        "last_failed": user.last_failed,
+        "icon_url": user.icon_url,
+        "totp_secret": user.totp_secret.decode('utf-8'),
+        "totp_enabled": user.totp_enabled,
+        "totp_initialized": user.totp_initialized,
+        "otp_only": user.otp_only
+    }
+    return make_response(jsonify(user), 200)
 
 
 @app.route('/users/toggle_admin/<int:userid>')

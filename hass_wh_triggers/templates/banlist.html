@@ -17,13 +17,13 @@
             <td>{{ banned.ip }}</td>
             <td>{{ banned.last_attempt | ctime }}</td>
             <td>{{ banned.failed_attempts }}</td>
-            <td><a href="{{ url_for('banlist', del_banned=banned.id) }}" class="button is-danger is-small">Delete</a></td>
+            <td><a href="{{ url_for('banlist', del_banned=banned.id) }}" class="button is-danger is-small is-outlined">Delete</a></td>
         </tr>
     {% endfor %}
     </tbody>
 </table>
 <hr>
-<a href="{{ url_for('banlist', purge=1) }}" class="button is-danger is-small">Purge</a>
+<a href="{{ url_for('banlist', purge=1) }}" class="button is-danger is-small is-outlined">Purge</a>
 <br />
 </div>
 {% endif %}

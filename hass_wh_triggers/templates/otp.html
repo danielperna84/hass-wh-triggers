@@ -18,7 +18,7 @@
             <td><button class="button is-small" onclick="document.getElementById('url_token').innerHTML = '{{ token.token }}&user={{ usermap[token.user] }}'">{{ token.token }}</button></td>
             <td>{{ token.created | ctime }}</td>
             <td>{{ (token.max_age / 60) | int }}</td>
-            <td><a href="{{ url_for('otp', del_token=token.id) }}" class="button is-danger is-small">Delete</a></td>
+            <td><a href="{{ url_for('otp', del_token=token.id) }}" class="button is-danger is-small is-outlined">Delete</a></td>
         </tr>
     {% endfor %}
     </tbody>

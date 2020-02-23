@@ -710,7 +710,7 @@ def users():
 @login_required
 def users_json(userid):
     user = User.query.filter_by(id=userid).first()
-    user = {
+    userdata = {
         "username": user.username,
         "display_name": user.display_name,
         "created": user.created,
@@ -721,12 +721,13 @@ def users_json(userid):
         "last_login": user.last_login,
         "last_failed": user.last_failed,
         "icon_url": user.icon_url,
-        "totp_secret": user.totp_secret.decode('utf-8'),
         "totp_enabled": user.totp_enabled,
         "totp_initialized": user.totp_initialized,
         "otp_only": user.otp_only
     }
-    return make_response(jsonify(user), 200)
+    if user.totp_secret is not None:
+        userdata["totp_secret"] = user.totp_secret.decode('utf-8')
+    return make_response(jsonify(userdata), 200)
 
 
 @app.route('/users/toggle_admin/<int:userid>')

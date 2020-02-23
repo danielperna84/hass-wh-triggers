@@ -1,4 +1,4 @@
-Version 0.0.5 (2020-02-23)
+Version 0.0.5 (2020-02-24)
 - Reload when the app gets focus and show refresh-hint when lost (Issue #25)
 - Add custom modals (Issue #26)
 - Added button to append random string to Webhook URI (Issue #27)

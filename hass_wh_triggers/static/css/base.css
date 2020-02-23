@@ -1,3 +1,14 @@
+.footer_refresh {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    padding: 0.5rem;
+    background-color: #f0f0f0;
+    color: #666666;
+    text-align: center;
+  }
+
 .flash {
     color: #63B246;
 }

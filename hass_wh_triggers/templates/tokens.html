@@ -18,7 +18,7 @@
             <td>{{ token.created | ctime }}</td>
             <td>{{ (token.max_age / 60) | int }}</td>
             <td>{{ token.otp_only }}</td>
-            <td><a href="{{ url_for('tokens', del_token=token.id) }}" class="button is-danger is-small">Delete</a></td>
+            <td><a href="{{ url_for('tokens', del_token=token.id) }}" class="button is-danger is-small is-outlined">Delete</a></td>
         </tr>
     {% endfor %}
     </tbody>

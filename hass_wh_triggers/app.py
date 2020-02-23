@@ -361,7 +361,6 @@ def users_import():
     if not current_user.is_admin:
         redirect(url_for('triggers'))
     data = request.get_json()
-    app.logger.debug(request.get_json())
     user = User(
         created=data['created'],
         username=data['username'],
@@ -377,6 +376,25 @@ def users_import():
         totp_secret=data['totp_secret'].encode('utf-8'),
         icon_url=data['icon_url'])
     db.session.add(user)
+    db.session.commit()
+
+    return make_response(jsonify({"status": "success"}), 200)
+
+
+@app.route('/authenticators/import', methods=['POST'])
+@login_required
+def authenticators_import():
+    if not checkban(request.remote_addr):
+        abort(401)
+    if not current_user.is_admin:
+        redirect(url_for('triggers'))
+    data = request.get_json()
+    app.logger.debug(data)
+    authenticator = Authenticator(
+        credential=base64.b64decode(data['credential'].encode('utf-8')),
+        user=int(data['user']),
+        name=data['name'])
+    db.session.add(authenticator)
     db.session.commit()
 
     return make_response(jsonify({"status": "success"}), 200)
@@ -650,6 +668,17 @@ def totp_delete_username(username):
     db.session.add(user)
     db.session.commit()
     return make_response(jsonify({"status": "success"}), 200)
+
+
+@app.route('/authenticators/<int:authenticatorid>')
+@login_required
+def authenticators_json(authenticatorid):
+    authenticator = Authenticator.query.filter_by(id=authenticatorid).first()
+    authenticator = {
+        "name": authenticator.name,
+        "credential": base64.b64encode(authenticator.credential).decode('utf-8')
+    }
+    return make_response(jsonify(authenticator), 200)
 
 
 @app.route('/users', methods=['GET'])

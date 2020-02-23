@@ -38,7 +38,7 @@
     <table class="table is-bordered">
         <thead>
             <tr>
-                <th>ID</th><th>Name</th><th>Username</th><th></th>
+                <th>ID</th><th>Name</th><th>Username</th><th></th><th></th>
             </tr>
         </thead>
         <tbody>
@@ -47,12 +47,15 @@
                 <td>{{ authenticator.id }}</td>
                 <td>{{ authenticator.name }}</td>
                 <td>{{ usermap[authenticator.user] }}</td>
+                <td><button class="button is-primary is-small is-outlined" onclick="load_authenticator(this, {{ authenticator.id }})">Show JSON</button></td>
                 <td><a href="{{ url_for('security', del_authenticator=authenticator.id) }}" class="button is-danger is-small is-outlined">Delete</a></td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
+<br />
+<button class="button is-primary is-small is-outlined" onclick="document.getElementById('modal_json_import_auth').classList.add('is-active')">Import from JSON</button>
 <div id="modal_json_import" class="modal">
     <div class="modal-background" onclick="document.getElementById('modal_json_import').classList.remove('is-active')"></div>
     <div class="modal-card">
@@ -67,6 +70,24 @@
       <footer class="modal-card-foot">
         <button class="button is-success" onclick="import_json()">Import</button>
         <button class="button" onclick="document.getElementById('modal_json_import').classList.remove('is-active')">Cancel</button>
+      </footer>
+    </div>
+</div>
+<div id="modal_json_import_auth" class="modal">
+    <div class="modal-background" onclick="document.getElementById('modal_json_import_auth').classList.remove('is-active')"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Import authenticator from JSON</p>
+        <button class="delete" aria-label="close" onclick="document.getElementById('modal_json_import_auth').classList.remove('is-active')"></button>
+      </header>
+      <section class="modal-card-body">
+        <p>Paste a authenticators JSON data here. Additionally specify the user ID of the user to which the authenticator belongs. Then click <i>Import</i> to import the authenticator into the database.</p><br />
+        <label for="auth_user">User ID: </label><input id="auth_user" name="auth_user" type="number" class="input" autocomplete="off" placeholder="1" /><br />
+        <textarea id="json_data_auth" class="textarea" placeholder='{"name": "alice", "credential": "..."}'></textarea>
+      </section>
+      <footer class="modal-card-foot">
+        <button class="button is-success" onclick="import_json_auth()">Import</button>
+        <button class="button" onclick="document.getElementById('modal_json_import_auth').classList.remove('is-active')">Cancel</button>
       </footer>
     </div>
 </div>
@@ -96,6 +117,42 @@ function import_json() {
                 }
                 else {
                     show_modal("Error", "Could not import user.");
+                }
+            });
+        }
+    )
+    .catch(function(err) {
+        show_modal("Fetch Error", err)
+        obj.classList.remove("is-loading");
+    });
+}
+
+function import_json_auth() {
+    document.getElementById('modal_json_import_auth').classList.remove('is-active');
+    data = JSON.parse(document.getElementById('json_data_auth').value);
+    data.user = document.getElementById('auth_user').value;
+    var url = "{{ url_for('authenticators_import') }}";
+    fetch(url, {
+        method: 'post',
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                if (response.status === 401) {
+                    show_modal("Error", response.statusText);
+                }
+                return;
+            }
+            response.json().then(function(res) {
+                if (res.status == "success") {
+                    window.location.reload();
+                }
+                else {
+                    show_modal("Error", "Could not import authenticator.");
                 }
             });
         }
@@ -201,6 +258,28 @@ function load_user(obj, id) {
             }
             response.json().then(function(data) {
                 show_modal("User as JSON", "<pre class='force-select'>" + JSON.stringify(data, null, 2) + "</pre>");
+                obj.classList.remove("is-loading");
+            });
+        }
+    )
+    .catch(function(err) {
+        show_modal("Fetch Error", err);
+        obj.classList.remove("is-loading");
+    });
+}
+
+function load_authenticator(obj, id) {
+    obj.classList.add("is-loading");
+    fetch("{{ url_for('authenticators_json', authenticatorid=0) }}".replace("0", id))
+    .then(
+        function(response) {
+            if (response.status !== 200) {
+                show_modal("Error", "Could not load authenticator data.");
+                obj.classList.remove("is-loading");
+                return;
+            }
+            response.json().then(function(data) {
+                show_modal("Authenticator as JSON", "<pre class='force-select'>" + JSON.stringify(data, null, 2) + "</pre>");
                 obj.classList.remove("is-loading");
             });
         }

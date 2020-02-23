@@ -148,7 +148,7 @@
             <tr>
                 <td>{{ authenticator.id }}</td>
                 <td>{{ authenticator.name }}</td>
-                <td><a href="{{ url_for('security', del_authenticator=authenticator.id) }}" class="button is-danger is-small">Delete</a></td>
+                <td><a href="{{ url_for('security', del_authenticator=authenticator.id) }}" class="button is-danger is-small is-outlined">Delete</a></td>
             </tr>
         {% endfor %}
         </tbody>

@@ -1,3 +1,6 @@
+Version 0.0.6 (2020-09-11)
+- Add reverse proxy support (Issue #10)
+
 Version 0.0.5 (2020-02-24)
 - Reload when the app gets focus and show refresh-hint when lost (Issue #25)
 - Add custom modals (Issue #26)

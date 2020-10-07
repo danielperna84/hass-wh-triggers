@@ -83,7 +83,7 @@ ORIGIN = app.config['ORIGIN']
 RP = PublicKeyCredentialRpEntity(RP_ID, "HASS-WH-Triggers")
 server = Fido2Server(RP)
 
-VERSION = "0.0.6"
+VERSION = "0.0.7"
 if isinstance(app.secret_key, bytes):
     ENCRYPTION_KEY = app.secret_key
 else:

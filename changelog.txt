@@ -1,4 +1,4 @@
-Version 0.0.7 ()
+Version 0.0.7 (2020-10-08)
 - Fix Firefox reloading issue (Issue #28)
 
 Version 0.0.6 (2020-09-11)

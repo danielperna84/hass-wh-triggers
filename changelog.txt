@@ -1,3 +1,6 @@
+Version 0.0.7 ()
+- Fix Firefox reloading issue (Issue #28)
+
 Version 0.0.6 (2020-09-11)
 - Add reverse proxy support (Issue #10)
 
